@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Свадебный помощник | Гости и рассадка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #FDF8F0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #FFF9F2;
+            border-radius: 48px;
+            box-shadow: 0 20px 40px rgba(58, 77, 46, 0.08);
+            padding: 24px 28px;
+            border: 1px solid #D8E2C5;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #C6A43F, #8B9D6E);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .sub {
+            color: #5A6B47;
+            border-left: 4px solid #D4AF37;
+            padding-left: 16px;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .file-status {
+            background: #F5F0E6;
+            border-radius: 40px;
+            padding: 12px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            border: 1px solid #D8E2C5;
+        }
+
+        .status-badge {
+            background: #D4AF37;
+            color: #2C3E22;
+            padding: 6px 16px;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: #EAE5D6;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 60px;
+            cursor: pointer;
+            color: #3A4D2E;
+            font-size: 0.8rem;
+        }
+
+        .refresh-btn:hover {
+            background: #D8E2C5;
+        }
+
+        .dashboard-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 28px;
+            padding: 10px 24px;
+            flex: 1;
+            min-width: 120px;
+            border: 1px solid #D8E2C5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .stat-card span {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #8B9D6E;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3A4D2E;
+        }
+
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .guests-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: white;
+            border-radius: 32px;
+            padding: 20px;
+            border: 1px solid #D8E2C5;
+        }
+
+        .seating-panel {
+            flex: 2.5;
+            min-width: 450px;
+            background: white;
+            border-radius: 32px;
+            padding: 20px;
+            border: 1px solid #D8E2C5;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #3A4D2E;
+            border-bottom: 2px solid #EAE5D6;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .guest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .guest-card {
+            background: #FDF8F0;
+            border-radius: 60px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #EAE5D6;
+        }
+
+        .guest-name {
+            font-weight: 600;
+            color: #2C3E22;
+            font-size: 0.95rem;
+        }
+
+        .guest-group {
+            font-size: 0.65rem;
+            background: #EAE5D6;
+            padding: 2px 10px;
+            border-radius: 30px;
+            color: #5A6B47;
+        }
+
+        .attending-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #EAE5D6;
+            padding: 2px 12px;
+            border-radius: 40px;
+        }
+
+        .attending-toggle label {
+            font-size: 0.75rem;
+            color: #3A4D2E;
+        }
+
+        .guest-actions button {
+            background: none;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .edit-btn { background: #D8E2C5; color: #5A6B47; }
+        .delete-btn { background: #E8DCD0; color: #B68B6B; }
+
+        .add-guest {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .add-guest input, .add-guest select {
+            padding: 10px 16px;
+            border-radius: 60px;
+            border: 1px solid #D8E2C5;
+            background: white;
+            font-size: 0.85rem;
+            flex: 1;
+        }
+
+        .primary-btn {
+            background: #D4AF37;
+            color: #2C3E22;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .primary-btn:hover { background: #C6A43F; }
+
+        .reset-seats {
+            background: #EAE5D6;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 60px;
+            cursor: pointer;
+            color: #3A4D2E;
+            margin-top: 16px;
+        }
+
+        .tables-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        .table-card {
+            background: #FDF8F0;
+            border-radius: 28px;
+            padding: 16px;
+            width: 310px;
+            border: 1px solid #D8E2C5;
+        }
+
+        .table-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            background: #EAE5D6;
+            padding: 6px;
+            border-radius: 40px;
+            margin-bottom: 16px;
+            color: #3A4D2E;
+        }
+
+        .seats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .seat-item {
+            background: white;
+            border-radius: 20px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #EAE5D6;
+        }
+
+        .seat-label {
+            font-size: 0.6rem;
+            color: #8B9D6E;
+            background: #EAE5D6;
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        .guest-name-seat {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 6px 0;
+            padding: 4px;
+            min-height: 45px;
+            background: #FDF8F0;
+            border-radius: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 6px;
+            border-radius: 30px;
+            border: 1px solid #D8E2C5;
+            font-size: 0.7rem;
+            background: white;
+        }
+
+        .empty-seat { color: #B6C8A2; font-style: italic; }
+        footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #8B9D6E;
+        }
+
+        @media (max-width: 780px) {
+            .app-container { padding: 16px; }
+            .seating-panel { min-width: auto; }
+            .table-card { width: 100%; }
+        }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app-container">
+    <h1>🌿 Свадебный помощник</h1>
+    <div class="sub">Контроль гостей + рассадка | Загрузите Excel-файл</div>
+
+    <div class="file-status">
+        <span>📁 <span id="fileNameStatus">список_гостей.xlsx</span></span>
+        <span class="status-badge" id="loadStatus">⏳ Загрузка...</span>
+        <button class="refresh-btn" id="reloadExcelBtn">⟳ Перезагрузить Excel</button>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card"><span>Всего гостей</span><div class="number" id="totalGuests">0</div></div>
+        <div class="stat-card"><span>Подтвердили</span><div class="number" id="attendingCount">0</div></div>
+        <div class="stat-card"><span>Рассажено</span><div class="number" id="seatedCount">0</div></div>
+        <div class="stat-card"><span>Свободных мест</span><div class="number" id="freeSeats">0</div></div>
+    </div>
+
+    <div class="two-columns">
+        <div class="guests-panel">
+            <div class="section-title">👥 Список гостей</div>
+            <div id="guestListContainer" class="guest-list"></div>
+            <div class="add-guest">
+                <input type="text" id="newGuestName" placeholder="Новый гость">
+                <select id="newGuestGroup">
+                    <option>Друзья</option><option>Семья жениха</option><option>Семья невесты</option><option>Родители</option>
+                </select>
+                <button id="addGuestBtn" class="primary-btn">➕ Добавить</button>
+            </div>
+        </div>
+
+        <div class="seating-panel">
+            <div class="section-title">🍽️ План рассадки</div>
+            <div id="tablesVisualization" class="tables-container"></div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button id="resetAllSeatsBtn" class="reset-seats">⟳ Сбросить рассадку</button>
+            </div>
+        </div>
+    </div>
+    <footer>🌾 Назначайте гостей через выпадающие списки — система сама переместит с предыдущего места</footer>
+</div>
+
+<script>
+    // ===================== ДАННЫЕ =====================
+    let guests = [];        // { id, name, group, attending }
+    let tables = [];        // столы с местами
+
+    const DEFAULT_TABLES = [
+        { id: 1, name: "Стол «Цветущий сад»", seats: Array(8).fill().map((_, i) => ({ seatId: i, guestId: null })) },
+        { id: 2, name: "Стол «Лунная соната»", seats: Array(8).fill().map((_, i) => ({ seatId: i, guestId: null })) },
+        { id: 3, name: "Стол «Золотой ключ»", seats: Array(6).fill().map((_, i) => ({ seatId: i, guestId: null })) }
+    ];
+
+    function initTables() {
+        tables = DEFAULT_TABLES.map(t => ({
+            ...t,
+            seats: t.seats.map(s => ({ ...s, guestId: null }))
+        }));
+    }
+
+    // ===================== ВСПОМОГАТЕЛЬНЫЕ =====================
+    function getGuestById(id) { return guests.find(g => g.id === id); }
+    function getAttendingGuests() { return guests.filter(g => g.attending === true); }
+
+    function removeGuestFromAllSeats(guestId) {
+        tables.forEach(t => t.seats.forEach(s => { if (s.guestId === guestId) s.guestId = null; }));
+    }
+
+    function assignGuestToSeat(tableId, seatIdx, guestId) {
+        if (!guestId) {
+            const table = tables.find(t => t.id === tableId);
+            if (table && table.seats[seatIdx]) table.seats[seatIdx].guestId = null;
+            renderAll();
+            return;
+        }
+        const guest = getGuestById(guestId);
+        if (!guest || !guest.attending) return;
+        removeGuestFromAllSeats(guestId);
+        const targetTable = tables.find(t => t.id === tableId);
+        if (targetTable && targetTable.seats[seatIdx]) targetTable.seats[seatIdx].guestId = guestId;
+        renderAll();
+    }
+
+    function resetAllSeating() { tables.forEach(t => t.seats.forEach(s => s.guestId = null)); renderAll(); }
+    function addGuest(name, group) { if (!name.trim()) return; guests.push({ id: Date.now(), name: name.trim(), group: group, attending: true }); renderAll(); }
+    function deleteGuest(guestId) { removeGuestFromAllSeats(guestId); guests = guests.filter(g => g.id !== guestId); renderAll(); }
+    function toggleAttending(guestId) {
+        const guest = getGuestById(guestId);
+        if (guest) { guest.attending = !guest.attending; if (!guest.attending) removeGuestFromAllSeats(guestId); }
+        renderAll();
+    }
+    function editGuestName(guestId) {
+        const guest = getGuestById(guestId);
+        if (!guest) return;
+        const newName = prompt("Новое имя:", guest.name);
+        if (newName?.trim()) { guest.name = newName.trim(); renderAll(); }
+    }
+
+    // ===================== СТАТИСТИКА =====================
+    function updateStats() {
+        const total = guests.length;
+        const attending = guests.filter(g => g.attending).length;
+        let seatedCount = 0, totalSeats = 0;
+        tables.forEach(t => {
+            totalSeats += t.seats.length;
+            t.seats.forEach(s => {
+                if (s.guestId && getGuestById(s.guestId)?.attending) seatedCount++;
+            });
+        });
+        document.getElementById("totalGuests").innerText = total;
+        document.getElementById("attendingCount").innerText = attending;
+        document.getElementById("seatedCount").innerText = seatedCount;
+        document.getElementById("freeSeats").innerText = totalSeats - seatedCount;
+    }
+
+    // ===================== ОТРИСОВКА =====================
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+    function renderGuests() {
+        const container = document.getElementById("guestListContainer");
+        if (!container) return;
+        container.innerHTML = "";
+        guests.forEach(guest => {
+            const div = document.createElement("div");
+            div.className = "guest-card";
+            div.innerHTML = `
+                <div class="guest-info" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <span class="guest-name">${escapeHtml(guest.name)}</span>
+                    <span class="guest-group">${escapeHtml(guest.group)}</span>
+                    <div class="attending-toggle">
+                        <input type="checkbox" ${guest.attending ? "checked" : ""} onchange="window.toggleAttending(${guest.id})">
+                        <label>Придет</label>
+                    </div>
+                </div>
+                <div class="guest-actions">
+                    <button class="edit-btn" onclick="window.editGuestName(${guest.id})">✎</button>
+                    <button class="delete-btn" onclick="window.deleteGuest(${guest.id})">🗑</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderSeating() {
+        const container = document.getElementById("tablesVisualization");
+        if (!container) return;
+        container.innerHTML = "";
+        const attendingGuests = getAttendingGuests();
+        tables.forEach(table => {
+            const card = document.createElement("div");
+            card.className = "table-card";
+            card.innerHTML = `<div class="table-title">${escapeHtml(table.name)} (${table.seats.length} мест)</div><div class="seats-grid" id="seats-grid-${table.id}"></div>`;
+            const grid = card.querySelector(`.seats-grid`);
+            table.seats.forEach((seat, idx) => {
+                const currentGuest = seat.guestId ? getGuestById(seat.guestId) : null;
+                const guestHtml = (currentGuest && currentGuest.attending) ? escapeHtml(currentGuest.name) : "🪑 свободно";
+                const guestClass = (currentGuest && currentGuest.attending) ? "" : "empty-seat";
+                const seatDiv = document.createElement("div");
+                seatDiv.className = "seat-item";
+                seatDiv.innerHTML = `
+                    <div class="seat-label">Место ${idx+1}</div>
+                    <div class="guest-name-seat ${guestClass}">${guestHtml}</div>
+                `;
+                const select = document.createElement("select");
+                const emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.innerText = "— Освободить —";
+                if (!seat.guestId) emptyOpt.selected = true;
+                select.appendChild(emptyOpt);
+                attendingGuests.forEach(g => {
+                    const opt = document.createElement("option");
+                    opt.value = g.id;
+                    opt.innerText = g.name;
+                    if (seat.guestId === g.id) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                select.onchange = (e) => assignGuestToSeat(table.id, idx, e.target.value ? parseInt(e.target.value) : null);
+                seatDiv.appendChild(select);
+                grid.appendChild(seatDiv);
+            });
+            container.appendChild(card);
+        });
+    }
+
+    function renderAll() { renderGuests(); renderSeating(); updateStats(); }
+
+    // Глобальные функции для onclick
+    window.toggleAttending = toggleAttending;
+    window.editGuestName = editGuestName;
+    window.deleteGuest = deleteGuest;
+
+    // ===================== ЗАГРУЗКА ИЗ EXCEL =====================
+    async function loadExcelFromFile(fileName) {
+        try {
+            const response = await fetch(fileName);
+            if (!response.ok) throw new Error(`Файл ${fileName} не найден`);
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            if (!rows.length) throw new Error("Файл пуст");
+            const newGuests = [];
+            let idGen = Date.now() % 100000;
+            rows.forEach(row => {
+                let name = row["Имя"] || row["name"] || "";
+                if (!name || name.toString().trim() === "") return;
+                name = name.toString().trim();
+                const statusRaw = row["Статус"] || "";
+                const attending = (statusRaw === "Приглашение принято");
+                let group = row["Группа"] || "Друзья";
+                if (!group || group.toString().trim() === "") group = "Друзья";
+                newGuests.push({ id: idGen++, name: name, group: group.toString(), attending: attending });
+            });
+            if (newGuests.length === 0) throw new Error("Не найдены гости в столбцах 'Имя' и 'Статус'");
+            guests = newGuests;
+            initTables();
+            renderAll();
+            document.getElementById("loadStatus").innerHTML = "✅ Загружено";
+            document.getElementById("loadStatus").style.background = "#C8D5B9";
+            document.getElementById("fileNameStatus").innerHTML = fileName;
+            return true;
+        } catch (err) {
+            console.warn(err);
+            document.getElementById("loadStatus").innerHTML = "⚠️ Демо-данные";
+            document.getElementById("loadStatus").style.background = "#EAE5D6";
+            // Демо-данные
+            guests = [
+                { id: 1, name: "Анна Петрова", group: "Друзья невесты", attending: true },
+                { id: 2, name: "Иван Иванов", group: "Друзья жениха", attending: true },
+                { id: 3, name: "Сергей Удов", group: "Родители", attending: true },
+                { id: 4, name: "Татьяна Удова", group: "Родители", attending: true },
+                { id: 5, name: "Екатерина Скребцова", group: "Друзья невесты", attending: true },
+                { id: 6, name: "Алиса Аникеева", group: "Друзья невесты", attending: false },
+            ];
+            initTables();
+            renderAll();
+            return false;
+        }
+    }
+
+    // ===================== ИНИЦИАЛИЗАЦИЯ =====================
+    document.getElementById("reloadExcelBtn").onclick = () => {
+        document.getElementById("loadStatus").innerHTML = "⏳ Загрузка...";
+        document.getElementById("loadStatus").style.background = "#D4AF37";
+        loadExcelFromFile("список_гостей.xlsx");
+    };
+    document.getElementById("addGuestBtn").onclick = () => {
+        const name = document.getElementById("newGuestName").value.trim();
+        if (name) addGuest(name, document.getElementById("newGuestGroup").value);
+        document.getElementById("newGuestName").value = "";
+    };
+    document.getElementById("resetAllSeatsBtn").onclick = () => { if (confirm("Сбросить рассадку?")) resetAllSeating(); };
+    document.getElementById("newGuestName").addEventListener("keypress", (e) => { if (e.key === "Enter") document.getElementById("addGuestBtn").click(); });
+
+    // Стартовая загрузка
+    loadExcelFromFile("список_гостей.xlsx");
+</script>
+</body>
+</html>
