@@ -323,7 +323,8 @@
     cloudSaveTimer = setTimeout(() => postCloudState("auto"), CLOUD_CONFIG.AUTO_SAVE_DELAY_MS || 1200);
   }
 
-  function loadCloudState(silent = false){
+  function loadCloudState(silent = false, options = {}){
+    const forceApply = Boolean(options.force);
     return new Promise((resolve) => {
       if(!isCloudConfigured()){
         if(!silent) alert("Сначала вставьте URL Web App в CLOUD_CONFIG внутри HTML.");
@@ -356,11 +357,15 @@
         if(payload && payload.ok && payload.state){
           const remoteTs = Number(payload.state.updatedAt) || 0;
           const localTs = Number(updatedAt) || 0;
-          if(remoteTs >= localTs || !guests.length){
+          const shouldApply = forceApply || remoteTs >= localTs || !guests.length;
+          if(shouldApply){
             applyState(payload.state, "☁️ Из облака");
+            setCloudStatus(`☁️ Загружено: ${new Date(remoteTs || Date.now()).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}`);
+          } else {
+            setCloudStatus("☁️ Локальная версия новее", "warn");
+            if(!silent) alert("Данные из облака старее локального состояния на этом устройстве. Для принудительного обновления нажмите загрузку ещё раз.");
           }
-          setCloudStatus(`☁️ Загружено: ${new Date(remoteTs || Date.now()).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}`);
-          resolve(true);
+          resolve(shouldApply);
           return;
         }
         if(payload && payload.ok && !payload.state){
@@ -969,7 +974,7 @@
         alert("Локальное сохранение очищено. Можно заново загрузить Excel.");
       }
     };
-    $("loadCloudBtn").onclick = () => loadCloudState(false);
+    $("loadCloudBtn").onclick = () => loadCloudState(false, { force: true });
     $("saveCloudBtn").onclick = () => {
       updatedAt = Date.now();
       saveState();
