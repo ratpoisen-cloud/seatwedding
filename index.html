@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wedding Guest Manager</title>
+  <style>
+    :root{
+      --bg:#f7f2ea; --card:#fffdf9; --line:#e6dccf; --text:#283223; --muted:#69745c;
+      --gold:#caa43f; --green:#8da16e; --pill:#efe6d8; --warn:#f8e5c8; --danger:#ead7cd;
+      --ok:#dde9d3; --shadow:0 18px 40px rgba(70,75,55,.08);
+      --radius:24px; --radius-sm:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#fbf7f1 0%,#f4efe6 100%);color:var(--text)}
+    .app{max-width:1680px;margin:0 auto;padding:20px}
+    .shell{background:rgba(255,253,249,.94);backdrop-filter: blur(8px); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:34px; padding:22px}
+    h1{margin:0;font-size:2rem;line-height:1.1;background:linear-gradient(135deg,var(--gold),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .subtitle{margin-top:6px;color:var(--muted);font-size:.9rem}
+    .topbar{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+    .status-row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .file-name{font-weight:700}
+    .hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button,.btn,select,input,textarea{font:inherit}
+    button,.btn{border:none;border-radius:999px;padding:10px 14px;cursor:pointer}
+    .btn-gold{background:var(--gold);color:#2f321d;font-weight:800}
+    .btn-soft{background:var(--pill);color:#44513a}
+    .btn-green{background:var(--green);color:#fff;font-weight:700}
+    .btn-danger{background:var(--danger);color:#8b5d43}
+    .badge{padding:7px 12px;border-radius:999px;font-size:.8rem;font-weight:800;background:var(--gold);color:#2f321d}
+    .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px}
+    .stat .label{font-size:.73rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .stat .value{font-size:1.8rem;font-weight:900;margin-top:6px}
+    .workspace{display:grid;grid-template-columns:430px 1fr;gap:16px;margin-top:16px;align-items:start}
+    .workspace > .panel:first-child{display:flex;flex-direction:column;min-height:calc(100vh - 250px)}
+    .workspace > .panel:first-child .controls,.workspace > .panel:first-child .section-head{flex-shrink:0}
+
+    .section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .section-title{font-size:1.18rem;font-weight:800}
+    .controls{display:flex;flex-direction:column;gap:10px}
+    .search{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:18px;background:#fff}
+    .toolbar-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .segmented,.chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 12px;border-radius:999px;background:var(--pill);font-size:.78rem;color:#40503a;cursor:pointer;border:1px solid transparent}
+    .chip.active{background:#ead28c;border-color:#d8b24a;font-weight:800}
+    .guest-list{flex:1;min-height:320px;max-height:calc(100vh - 360px);overflow:auto;padding-right:4px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .guest-card{border:1px solid var(--line);border-radius:18px;padding:12px;background:#fff}
+    .guest-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .guest-name{font-weight:800}
+    .subline{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--pill);font-size:.72rem;color:#51604a}
+    .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .meta .mini{font-size:.7rem;color:var(--muted);padding:4px 8px;border-radius:999px;background:#f6f1e8}
+    .guest-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .icon-btn{padding:8px 10px;border-radius:999px;background:var(--pill);font-size:.8rem}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .switch{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--pill);border-radius:999px;font-size:.76rem}
+    .question-box{margin-top:10px;padding:10px;border:1px dashed #dfbf81;border-radius:16px;background:#fff8ef}
+    .question-box input{width:100%;padding:10px 12px;border-radius:14px;border:1px solid var(--line);margin-top:8px}
+    .question-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .layout-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .table-creator{display:grid;grid-template-columns:1fr 110px auto;gap:8px;margin:14px 0}
+    .table-creator input{padding:11px 12px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(315px,1fr));gap:14px;max-height:calc(100vh - 290px);overflow:auto;padding-right:4px}
+    .table-card{border:1px solid var(--line);border-radius:20px;padding:14px;background:#fff}
+    .table-titlebar{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}
+    .table-title{font-weight:800;background:var(--pill);padding:6px 12px;border-radius:999px}
+    .table-caption{font-size:.75rem;color:var(--muted)}
+    .seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .seat{border:1px solid var(--line);border-radius:16px;padding:8px;background:#fffdf9;position:relative}
+    .seat-num{font-size:.68rem;color:var(--muted);background:var(--pill);padding:3px 8px;border-radius:999px;display:inline-block}
+    .seat-name{min-height:42px;margin:8px 0 6px;background:#f9f5ee;border-radius:12px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700}
+    .seat-name.empty{color:#afbaa0;font-style:italic;font-weight:500}
+    .seat-name.question{background:var(--warn);border-left:3px solid var(--gold)}
+    .seat select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .seat-search{width:100%;margin-top:6px;margin-bottom:6px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:.76rem}
+    .seat-search:focus,.seat select:focus,.search:focus,.table-creator input:focus,.form-inline input:focus,.form-inline select:focus,select:focus{outline:none;border-color:#d8b24a;box-shadow:0 0 0 3px rgba(216,178,74,.14)}
+    .seat-controls{display:flex;flex-direction:column;gap:6px}
+    .seat-search-wrap{position:relative}
+    .seat-search-results{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:25;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 28px rgba(35,42,30,.10);padding:6px;max-height:220px;overflow:auto}
+    .seat-search-results.open{display:block}
+    .seat-result{width:100%;text-align:left;background:transparent;border:none;border-radius:10px;padding:10px 10px;color:var(--text);display:flex;justify-content:space-between;gap:8px}
+    .seat-result:hover{background:#f6f1e8}
+    .seat-result-meta{font-size:.7rem;color:var(--muted)}
+    .seat-empty-btn{background:var(--pill);color:#44513a;font-size:.74rem;padding:8px 10px}
+
+    .panel,.stat,.guest-card,.table-card,.empty-state{box-shadow:0 6px 20px rgba(52,63,41,.03)}
+    .stat .value{font-size:1.95rem;line-height:1}
+    .table-card{padding:16px}
+    .seat-name{min-height:46px}
+    .table-creator input,.form-inline input,.form-inline select,.search,select{transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease}
+    .chip{font-weight:600}
+    .guest-card{padding:14px}
+
+    .tooltip-wrap{position:relative;display:inline-flex}
+    .tooltip{display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);min-width:170px;max-width:240px;background:#263122;color:#fffdf8;padding:8px 10px;border-radius:12px;font-size:.72rem;z-index:20}
+    .tooltip-wrap:hover .tooltip{display:block}
+    .form-inline{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:12px;margin-top:12px;align-items:stretch}
+    .form-inline input,.form-inline select{padding:11px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;min-width:0}
+    .empty-state{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:18px;background:#fffdfb}
+    .form-inline .btn-gold,.table-creator .btn-green{width:100%;justify-content:center;display:inline-flex;align-items:center;white-space:nowrap;min-height:48px}
+    .form-inline #newGuestName{min-width:0;width:100%}
+.form-inline #addGuestBtn{grid-column:1 / -1}
+.hidden-input{display:none}
+    .tiny{font-size:.72rem;color:var(--muted)}
+    @media (max-width:1200px){.workspace{grid-template-columns:1fr}.workspace > .panel:first-child{min-height:0}.guest-list{min-height:340px;max-height:52vh}.tables{max-height:none}.stats{grid-template-columns:repeat(3,1fr)}.topbar{grid-template-columns:1fr}.form-inline{grid-template-columns:minmax(0,1fr) 180px}}
+    @media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.table-creator,.form-inline,.toolbar-grid,.replacement-inline{grid-template-columns:1fr}.seats{grid-template-columns:1fr}.shell{padding:14px}.app{padding:10px}.workspace > .panel:first-child{display:flex;flex-direction:column;min-height:0}.guest-list{min-height:0;height:42vh;max-height:42vh;padding-right:2px}.form-inline{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(255,253,249,0) 0%, rgba(255,253,249,.92) 18%, rgba(255,253,249,1) 100%);padding-top:10px;margin-top:10px}}
+  </style>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="shell">
+    <h1>Wedding Guest Manager</h1>
+    <div class="subtitle">Автосохранение включено</div>
+
+    <div class="topbar">
+      <div class="panel">
+        <div class="status-row">
+          <div>
+            <div>📁 <span class="file-name" id="fileNameStatus">Общая база гостей</span></div>
+          </div>
+          <div class="actions">
+            <span class="badge" id="loadStatus">⏳ Загрузка...</span>
+            <span class="badge" id="cloudStatus" style="background:#efe6d8;color:#44513a;">☁️ Не подключено</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="label">Всего гостей</div><div class="value" id="totalGuests">0</div></div>
+      <div class="stat"><div class="label">Приняли приглашение</div><div class="value" id="acceptedCount">0</div></div>
+      <div class="stat"><div class="label">Под вопросом</div><div class="value" id="questionCount">0</div></div>
+      <div class="stat"><div class="label">Не приглашены / отказ</div><div class="value" id="inactiveCount">0</div></div>
+      <div class="stat"><div class="label">Рассажено</div><div class="value" id="seatedCount">0</div></div>
+      <div class="stat"><div class="label">Свободно мест</div><div class="value" id="freeSeatsCount">0</div></div>
+    </div>
+
+    <div class="workspace">
+      <div class="panel">
+        <div class="section-head">
+          <div class="section-title">Список гостей</div>
+          
+        </div>
+
+        <div class="controls">
+          <input id="searchInput" class="search" placeholder="Поиск по имени, группе или метке" />
+          <div class="toolbar-grid">
+            <select id="sortSelect">
+              <option value="name-asc">Сортировка: имя А–Я</option>
+              <option value="name-desc">Сортировка: имя Я–А</option>
+              <option value="group">Сортировка: по группе</option>
+              <option value="status">Сортировка: по статусу</option>
+            </select>
+            <select id="statusFilter">
+              <option value="all">Все статусы</option>
+              <option value="attending">Только придут</option>
+              <option value="question">Только под вопросом</option>
+              <option value="inactive">Не приглашены / не придут</option>
+              <option value="seated">Только рассаженные</option>
+              <option value="required">Только обязательные</option>
+            </select>
+          </div>
+          <div id="labelChips" class="chips"></div>
+        </div>
+
+        <div id="guestListContainer" class="guest-list"></div>
+
+        <div class="section-head" style="margin-top:12px">
+          <div class="section-title" style="font-size:1rem">Добавить гостя</div>
+        </div>
+        <div class="form-inline">
+          <input id="newGuestName" placeholder="Имя гостя" />
+          <select id="newGuestGroup"></select>
+          <button id="addGuestBtn" class="btn-gold">➕ Добавить</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="layout-head">
+          <div class="section-title">План рассадки</div>
+          <button class="btn-soft" id="resetAllSeatsBtn">Сбросить рассадку</button>
+        </div>
+
+        <div class="table-creator">
+          <input id="newTableName" placeholder="Название стола" />
+          <input id="newTableSeats" type="number" min="1" max="30" value="6" placeholder="Мест" />
+          <button id="addTableBtn" class="btn-green">➕ Добавить стол</button>
+        </div>
+
+        <div id="tablesVisualization" class="tables"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "weddingGuestManagerPro.supabase.v1";
+  const DEFAULT_GROUPS = ["Жених и Невеста","Родители","Семья жениха","Семья невесты","Друзья жениха","Друзья невесты","Друзья","Коллеги","Прочее"];
+  const CLOUD_CONFIG = {
+    url: "PASTE_SUPABASE_URL_HERE",
+    publishableKey: "PASTE_SUPABASE_PUBLISHABLE_KEY_HERE",
+    stateId: "wedding-main"
+  };
+
+  let guests = [];
+  let tables = [];
+  let nextGuestId = 1000;
+  let nextTableId = 10;
+  let currentFileName = "список_гостей.xlsx";
+  let labelFilter = "все";
+  let searchTerm = "";
+  let statusFilter = "all";
+  let sortMode = "name-asc";
+  let supabaseClient = null;
+  let cloudSaveTimer = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function norm(v){ return String(v ?? "").trim().replace(/\s+/g, " "); }
+  function lower(v){ return norm(v).toLowerCase(); }
+  function esc(str){ return String(str ?? "").replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+  function uniq(arr){ return [...new Set(arr.filter(Boolean))]; }
+  function canonicalLabel(v){
+    const raw = norm(v);
+    const key = lower(raw);
+    if(!key) return "";
+    const map = {
+      "жених":"жених",
+      "невеста":"невеста",
+      "семья":"семья",
+      "родители":"родители",
+      "друзья":"друзья",
+      "коллеги":"коллеги",
+      "пара":"пара",
+      "без группы":"без группы",
+      "жених и невеста":"Жених и Невеста",
+      "семья жениха":"Семья жениха",
+      "семья невесты":"Семья невесты",
+      "друзья жениха":"Друзья жениха",
+      "друзья невесты":"Друзья невесты",
+      "прочее":"Прочее"
+    };
+    return map[key] || raw;
+  }
+  function uniqLabels(arr){
+    const seen = new Set();
+    const out = [];
+    (arr || []).forEach(item => {
+      const value = canonicalLabel(item);
+      const key = lower(value);
+      if(!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(value);
+    });
+    return out;
+  }
+
+  function setLoadStatus(text, bg){
+    const el = $("loadStatus");
+    el.textContent = text;
+    if(bg) el.style.background = bg;
+  }
+
+  function setCloudStatus(text, bg){
+    const el = $("cloudStatus");
+    if(!el) return;
+    el.textContent = text;
+    if(bg) el.style.background = bg;
+  }
+
+  function cloudConfigured(){
+    return Boolean(CLOUD_CONFIG.url && CLOUD_CONFIG.publishableKey && !CLOUD_CONFIG.url.includes("PASTE_") && !CLOUD_CONFIG.publishableKey.includes("PASTE_"));
+  }
+
+  function initSupabase(){
+    if (supabaseClient) return true;
+    if (!cloudConfigured()) {
+      setCloudStatus("☁️ Вставьте URL и key", "#f0e1cf");
+      return false;
+    }
+    if (!window.supabase || !window.supabase.createClient) {
+      setCloudStatus("☁️ SDK не загружен", "#e7cfc7");
+      return false;
+    }
+    supabaseClient = window.supabase.createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.publishableKey);
+    setCloudStatus("☁️ Подключено", "#d6e3ca");
+    return true;
+  }
+
+  function deriveLabels(group){
+    const g = canonicalLabel(group);
+    const l = lower(g);
+    const labels = [];
+    if(g) labels.push(g);
+    if(l.includes("жених")) labels.push("жених");
+    if(l.includes("невест")) labels.push("невеста");
+    if(l.includes("семья")) labels.push("семья");
+    if(l.includes("родител")) labels.push("родители");
+    if(l.includes("друз")) labels.push("друзья");
+    if(l.includes("коллег")) labels.push("коллеги");
+    if(l.includes("жених и невест")) labels.push("пара");
+    return uniqLabels(labels.length ? labels : ["без группы"]);
+  }
+
+  function mapExcelStatus(raw){
+    const s = lower(raw);
+    if (s.includes("принято") || s.includes("accepted")) return "attending";
+    if (s.includes("не приглаш") || s.includes("not invited")) return "not_invited";
+    if (s.includes("отказ") || s.includes("не прид")) return "declined";
+    if (s.includes("под вопрос") || s.includes("maybe")) return "question";
+    return "unknown";
+  }
+
+  function buildGuest(data){
+    const group = canonicalLabel(data.group) || "Друзья";
+    const excelStatus = mapExcelStatus(data.sourceStatus);
+    const isQuestion = Boolean(data.isQuestion) || excelStatus === "question";
+    const attending = data.attending !== undefined ? Boolean(data.attending) : ["attending","question","unknown"].includes(excelStatus);
+    const guest = {
+      id: Number(data.id) || nextGuestId++,
+      name: norm(data.name),
+      group,
+      labels: uniqLabels([...(Array.isArray(data.labels) ? data.labels : []), ...deriveLabels(group)]),
+      attending,
+      isQuestion,
+      replacementName: norm(data.replacementName),
+      sourceStatus: norm(data.sourceStatus),
+      comment: norm(data.comment),
+      age: norm(data.age),
+      transfer: norm(data.transfer),
+      contacts: norm(data.contacts),
+      drinks: norm(data.drinks),
+      required: /да|yes|true/i.test(norm(data.required))
+    };
+    if (guest.id >= nextGuestId) nextGuestId = guest.id + 1;
+    return guest;
+  }
+
+  function createTable(id, name, seatCount){
+    return { id, name: norm(name) || `Стол ${id}`, seats: Array.from({length: seatCount}, (_, i) => ({ seatId:i, guestId:null })) };
+  }
+
+  function initDefaultTables(){
+    tables = [
+      createTable(1, "Стол «Цветущий сад»", 8),
+      createTable(2, "Стол «Лунная соната»", 8),
+      createTable(3, "Стол «Золотой ключ»", 6),
+    ];
+    nextTableId = 10;
+  }
+
+  function serializeState(){
+    return {
+      schemaVersion: 1,
+      guests,
+      tables,
+      nextGuestId,
+      nextTableId,
+      currentFileName,
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  function applyState(state, sourceLabel){
+    guests = (state.guests || []).map(buildGuest);
+    tables = Array.isArray(state.tables) ? state.tables : [];
+    nextGuestId = Number(state.nextGuestId) || nextGuestId;
+    nextTableId = Number(state.nextTableId) || nextTableId;
+    currentFileName = state.currentFileName || currentFileName;
+    if(!tables.length) initDefaultTables();
+    cleanupInvalidSeats();
+    $("fileNameStatus").textContent = sourceLabel || currentFileName;
+    saveState();
+    renderAll();
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState()));
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      const state = JSON.parse(raw);
+      applyState(state, state.currentFileName || "💾 Локальное сохранение");
+      setLoadStatus("💾 Последняя локальная версия", "#d6e3ca");
+      return true;
+    }catch(e){
+      console.warn("loadState failed", e);
+      return false;
+    }
+  }
+
+  function clearState(){
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function getGuestById(id){
+    return guests.find(g => g.id === Number(id));
+  }
+
+  function isGuestSeated(id){
+    return tables.some(t => t.seats.some(s => s.guestId === Number(id)));
+  }
+
+  function removeGuestFromAllSeats(guestId){
+    const gid = Number(guestId);
+    tables.forEach(t => t.seats.forEach(s => { if(s.guestId === gid) s.guestId = null; }));
+  }
+
+  function cleanupInvalidSeats(){
+    tables.forEach(t => t.seats.forEach(s => {
+      const guest = s.guestId ? getGuestById(s.guestId) : null;
+      if (!guest || !guest.attending) s.guestId = null;
+    }));
+  }
+
+  function assignGuestToSeat(tableId, seatIdx, guestId){
+    const table = tables.find(t => t.id === Number(tableId));
+    if(!table || !table.seats[seatIdx]) return;
+    if(!guestId){
+      table.seats[seatIdx].guestId = null;
+      persistAndRender();
+      return;
+    }
+    const guest = getGuestById(guestId);
+    if(!guest || !guest.attending) return;
+    removeGuestFromAllSeats(guest.id);
+    table.seats[seatIdx].guestId = guest.id;
+    persistAndRender();
+  }
+
+  function addTable(name, seats){
+    const count = Math.max(1, Math.min(30, parseInt(seats, 10) || 6));
+    tables.push(createTable(nextTableId++, norm(name) || `Стол ${tables.length + 1}`, count));
+    persistAndRender();
+  }
+
+  function deleteTable(tableId){
+    tables = tables.filter(t => t.id !== Number(tableId));
+    persistAndRender();
+  }
+
+  function addGuest(name, group){
+    const clean = norm(name);
+    if(!clean) return;
+    guests.push(buildGuest({
+      id: nextGuestId++,
+      name: clean,
+      group: norm(group) || "Друзья",
+      attending: true,
+      sourceStatus: "Добавлен вручную"
+    }));
+    persistAndRender();
+  }
+
+  function deleteGuest(id){
+    removeGuestFromAllSeats(id);
+    guests = guests.filter(g => g.id !== Number(id));
+    persistAndRender();
+  }
+
+  function editGuestName(id){
+    const guest = getGuestById(id);
+    if(!guest) return;
+    const v = prompt("Новое имя гостя:", guest.name);
+    if(v && norm(v)){
+      guest.name = norm(v);
+      persistAndRender();
+    }
+  }
+
+  function toggleAttending(id){
+    const guest = getGuestById(id);
+    if(!guest) return;
+    guest.attending = !guest.attending;
+    if(!guest.attending) removeGuestFromAllSeats(id);
+    persistAndRender();
+  }
+
+  function setQuestionStatus(id, val){
+    const guest = getGuestById(id);
+    if(!guest) return;
+    guest.isQuestion = Boolean(val);
+    if(!guest.isQuestion) guest.replacementName = "";
+    if(guest.isQuestion) guest.attending = true;
+    persistAndRender();
+  }
+
+  function setReplacementName(id, value){
+    const guest = getGuestById(id);
+    if(!guest) return;
+    guest.replacementName = norm(value);
+    persistAndRender();
+  }
+
+  function replaceGuest(currentId){
+    const currentGuest = getGuestById(currentId);
+    if(!currentGuest || !currentGuest.isQuestion || !norm(currentGuest.replacementName)){
+      alert("Сначала укажите потенциальную замену.");
+      return;
+    }
+    const replacementName = norm(currentGuest.replacementName);
+    let replacement = guests.find(g => lower(g.name) === lower(replacementName));
+    if(!replacement){
+      replacement = buildGuest({
+        id: nextGuestId++,
+        name: replacementName,
+        group: currentGuest.group,
+        attending: true,
+        sourceStatus: "Добавлен как замена"
+      });
+      guests.push(replacement);
+    } else {
+      replacement.attending = true;
+      replacement.isQuestion = false;
+    }
+    tables.forEach(t => t.seats.forEach(s => {
+      if(s.guestId === currentGuest.id) s.guestId = replacement.id;
+    }));
+    guests = guests.filter(g => g.id !== currentGuest.id);
+    persistAndRender();
+    alert(`Гость "${currentGuest.name}" заменён на "${replacement.name}"`);
+  }
+
+  function resetAllSeating(){
+    tables.forEach(t => t.seats.forEach(s => s.guestId = null));
+    persistAndRender();
+  }
+
+  function getAllLabels(){
+    const labels = guests.flatMap(g => g.labels || []);
+    return ["все", ...uniq(labels).sort((a,b)=>a.localeCompare(b,'ru'))];
+  }
+
+  function getSeatGuestIdsSet(){
+    return new Set(tables.flatMap(t => t.seats.map(s => s.guestId).filter(Boolean)));
+  }
+
+  function guestMatchesSearch(guest){
+    if(!searchTerm) return true;
+    const hay = [
+      guest.name, guest.group, guest.comment, guest.sourceStatus, guest.age,
+      guest.transfer, guest.contacts, guest.drinks, ...(guest.labels || [])
+    ].join(" ").toLowerCase();
+    return hay.includes(searchTerm);
+  }
+
+  function guestMatchesLabel(guest){
+    return labelFilter === "все" || (guest.labels || []).some(l => lower(l) === lower(labelFilter));
+  }
+
+  function guestMatchesStatus(guest){
+    if(statusFilter === "all") return true;
+    if(statusFilter === "attending") return guest.attending;
+    if(statusFilter === "question") return guest.isQuestion;
+    if(statusFilter === "inactive") return !guest.attending;
+    if(statusFilter === "seated") return isGuestSeated(guest.id);
+    if(statusFilter === "required") return guest.required;
+    return true;
+  }
+
+  function getFilteredGuests(){
+    let list = guests.filter(g => guestMatchesSearch(g) && guestMatchesLabel(g) && guestMatchesStatus(g));
+    if(sortMode === "name-asc") list.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+    if(sortMode === "name-desc") list.sort((a,b)=>b.name.localeCompare(a.name,'ru'));
+    if(sortMode === "group") list.sort((a,b)=>(a.group+b.name).localeCompare(b.group+a.name,'ru'));
+    if(sortMode === "status") list.sort((a,b)=>Number(b.isQuestion)-Number(a.isQuestion) || Number(b.attending)-Number(a.attending) || a.name.localeCompare(b.name,'ru'));
+    return list;
+  }
+
+  function statusView(guest){
+    if(guest.isQuestion) return {text:"Под вопросом", cls:"background:#f6e4c6;color:#875b19;", tooltip: guest.replacementName ? `Потенциальная замена: ${guest.replacementName}` : "Потенциальная замена не указана"};
+    if(guest.attending) return {text:"Придёт", cls:"background:#dce8d2;color:#32501d;", tooltip: guest.sourceStatus || "Статус подтверждён"};
+    return {text:"Не активен", cls:"background:#efe5db;color:#765f4f;", tooltip: guest.sourceStatus || "Не приглашён или не придёт"};
+  }
+
+  function renderLabelChips(){
+    const wrap = $("labelChips");
+    wrap.innerHTML = "";
+    getAllLabels().forEach(label => {
+      const btn = document.createElement("button");
+      btn.className = "chip" + (labelFilter === label ? " active" : "");
+      btn.textContent = label === "все" ? "Все метки" : label;
+      btn.onclick = () => { labelFilter = label; renderGuests(); renderLabelChips(); };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function renderGuestCard(guest){
+    const view = statusView(guest);
+    const card = document.createElement("div");
+    card.className = "guest-card";
+
+    const tags = uniqLabels([guest.group, ...(guest.labels || []).filter(l => lower(l) !== lower(guest.group))])
+      .map(tag => `<span class="tag">${esc(tag)}</span>`).join("");
+
+    const meta = [
+      guest.required ? `<span class="mini">Обязательный</span>` : "",
+      guest.age ? `<span class="mini">${esc(guest.age)}</span>` : "",
+      guest.transfer ? `<span class="mini">Трансфер: ${esc(guest.transfer)}</span>` : "",
+      isGuestSeated(guest.id) ? `<span class="mini">Рассажен</span>` : ""
+    ].join("");
+
+    const replaceButton = guest.replacementName
+      ? `<button class="btn-gold" onclick="window.wgm.replaceGuest(${guest.id})">Заменить</button>`
+      : `<button class="btn-gold" disabled style="opacity:.55;cursor:not-allowed">Заменить</button>`;
+
+    const questionBadge = guest.isQuestion ? `
+      <div class="question-indicator" tabindex="0" title="Под вопросом">
+        ?
+        <div class="question-pop">
+          <div class="question-pop-title">Потенциальная замена</div>
+          <div class="question-pop-name">${esc(guest.replacementName || "Не указана")}</div>
+          ${replaceButton}
+        </div>
+      </div>
+    ` : "";
+
+    card.innerHTML = `
+      <div class="guest-top">
+        <div class="guest-main">
+          <div class="guest-name">${esc(guest.name)}</div>
+          <div class="subline">${tags}</div>
+          ${meta ? `<div class="meta">${meta}</div>` : ``}
+        </div>
+
+        <div class="guest-side">
+          <span class="status-pill" style="${view.cls}">${view.text}</span>
+          ${questionBadge}
+          <div class="guest-actions">
+            <button class="icon-btn" onclick="window.wgm.editGuestName(${guest.id})">✏️</button>
+            <button class="icon-btn" onclick="window.wgm.deleteGuest(${guest.id})">🗑️</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="switch"><input type="checkbox" ${guest.attending ? "checked" : ""} onchange="window.wgm.toggleAttending(${guest.id})"> Придёт</label>
+        <label class="switch"><input type="checkbox" ${guest.isQuestion ? "checked" : ""} onchange="window.wgm.setQuestionStatus(${guest.id}, this.checked)"> Под вопросом</label>
+      </div>
+
+      ${guest.isQuestion ? `
+        <div class="replacement-inline">
+          <input id="rep-${guest.id}" placeholder="Потенциальная замена" value="${esc(guest.replacementName)}" />
+          <button class="btn-soft" onclick="window.wgm.setReplacementName(${guest.id}, document.getElementById('rep-${guest.id}').value)">Сохранить</button>
+        </div>
+      ` : ``}
+    `;
+    return card;
+  }
+
+  function renderGuests(){
+    const container = $("guestListContainer");
+    const list = getFilteredGuests();
+    container.innerHTML = "";
+    if(!list.length){
+      container.innerHTML = `<div class="empty-state">Ничего не найдено. Попробуйте сменить поиск или фильтры.</div>`;
+      return;
+    }
+    list.forEach(g => container.appendChild(renderGuestCard(g)));
+  }
+
+
+  function buildSeatOptions(select, attendingGuests, currentGuestId, searchValue){
+    const term = lower(searchValue);
+    select.innerHTML = "";
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "— Освободить —";
+    if(!currentGuestId) empty.selected = true;
+    select.appendChild(empty);
+
+    const filtered = !term
+      ? attendingGuests
+      : attendingGuests.filter(g =>
+          lower(g.name).includes(term) ||
+          lower(g.group).includes(term) ||
+          (g.labels || []).some(l => lower(l).includes(term))
+        );
+
+    filtered.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.name + (g.isQuestion ? " ❓" : "");
+      if(currentGuestId && currentGuestId === g.id) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    if(term && filtered.length === 0){
+      const nores = document.createElement("option");
+      nores.value = "";
+      nores.textContent = "Ничего не найдено";
+      nores.disabled = true;
+      select.appendChild(nores);
+    }
+
+    return filtered;
+  }
+
+  function renderSeatSearchResults(resultsWrap, matches, tableId, seatIdx, searchInput){
+    resultsWrap.innerHTML = "";
+    if(!searchInput.value.trim()){
+      resultsWrap.classList.remove("open");
+      return;
+    }
+    if(!matches.length){
+      const empty = document.createElement("div");
+      empty.className = "tiny";
+      empty.style.padding = "8px 10px";
+      empty.textContent = "Ничего не найдено";
+      resultsWrap.appendChild(empty);
+      resultsWrap.classList.add("open");
+      return;
+    }
+    matches.slice(0,8).forEach(g => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "seat-result";
+      btn.innerHTML = `<span>${esc(g.name)}${g.isQuestion ? " ❓" : ""}</span><span class="seat-result-meta">${esc(g.group)}</span>`;
+      btn.onclick = () => {
+        assignGuestToSeat(tableId, seatIdx, g.id);
+        searchInput.value = "";
+        resultsWrap.classList.remove("open");
+      };
+      resultsWrap.appendChild(btn);
+    });
+    resultsWrap.classList.add("open");
+  }
+
+  function renderTables(){
+    const container = $("tablesVisualization");
+    container.innerHTML = "";
+    if(!tables.length){
+      container.innerHTML = `<div class="empty-state">Пока нет столов. Создайте первый стол сверху.</div>`;
+      return;
+    }
+    const attendingGuests = guests.filter(g => g.attending).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+    tables.forEach(table => {
+      const card = document.createElement("div");
+      card.className = "table-card";
+
+      let seated = table.seats.filter(s => s.guestId).length;
+      card.innerHTML = `
+        <div class="table-titlebar">
+          <div>
+            <div class="table-title">${esc(table.name)}</div>
+            <div class="table-caption">${seated}/${table.seats.length} мест</div>
+          </div>
+          <button class="btn-danger" onclick="window.wgm.deleteTable(${table.id})">Удалить</button>
+        </div>
+        <div class="seats" id="table-seats-${table.id}"></div>
+      `;
+      const grid = card.querySelector(".seats");
+      table.seats.forEach((seat, idx) => {
+        const current = seat.guestId ? getGuestById(seat.guestId) : null;
+        const seatDiv = document.createElement("div");
+        seatDiv.className = "seat";
+        const hasQuestion = current && current.isQuestion;
+        seatDiv.innerHTML = `
+          <div class="seat-num">Место ${idx + 1}</div>
+          <div class="seat-name ${current ? (hasQuestion ? "question" : "") : "empty"}">
+            ${current ? esc(current.name) + (hasQuestion ? ` <span class="tooltip-wrap" style="margin-left:6px">❓<span class="tooltip">${esc(current.replacementName ? "Замена: " + current.replacementName : "Замена не указана")}</span></span>` : "") : "Свободно"}
+          </div>
+        `;
+        const controls = document.createElement("div");
+        controls.className = "seat-controls";
+
+        const searchWrap = document.createElement("div");
+        searchWrap.className = "seat-search-wrap";
+
+        const searchInput = document.createElement("input");
+        searchInput.type = "text";
+        searchInput.className = "seat-search";
+        searchInput.placeholder = "Посадить по имени...";
+        searchInput.autocomplete = "off";
+
+        const resultsWrap = document.createElement("div");
+        resultsWrap.className = "seat-search-results";
+
+        const emptyBtn = document.createElement("button");
+        emptyBtn.type = "button";
+        emptyBtn.className = "seat-empty-btn";
+        emptyBtn.textContent = "Освободить место";
+        emptyBtn.onclick = () => assignGuestToSeat(table.id, idx, null);
+
+        function getMatches(term){
+          const q = lower(term);
+          return attendingGuests.filter(g =>
+            lower(g.name).includes(q) ||
+            lower(g.group).includes(q) ||
+            (g.labels || []).some(l => lower(l).includes(q))
+          );
+        }
+
+        searchInput.addEventListener("input", (e) => {
+          renderSeatSearchResults(resultsWrap, getMatches(e.target.value), table.id, idx, searchInput);
+        });
+
+        searchInput.addEventListener("focus", () => {
+          if(searchInput.value.trim()){
+            renderSeatSearchResults(resultsWrap, getMatches(searchInput.value), table.id, idx, searchInput);
+          }
+        });
+
+        searchInput.addEventListener("keydown", (e) => {
+          if(e.key === "Enter"){
+            e.preventDefault();
+            const first = getMatches(searchInput.value)[0];
+            if(first){
+              assignGuestToSeat(table.id, idx, first.id);
+              searchInput.value = "";
+              resultsWrap.classList.remove("open");
+            }
+          }
+          if(e.key === "Escape"){
+            resultsWrap.classList.remove("open");
+          }
+        });
+
+        document.addEventListener("click", (e) => {
+          if(!searchWrap.contains(e.target)){
+            resultsWrap.classList.remove("open");
+          }
+        });
+
+        searchWrap.appendChild(searchInput);
+        searchWrap.appendChild(resultsWrap);
+        controls.appendChild(searchWrap);
+        controls.appendChild(emptyBtn);
+        seatDiv.appendChild(controls);
+        grid.appendChild(seatDiv);
+      });
+      container.appendChild(card);
+    });
+  }
+
+  function updateStats(){
+    const total = guests.length;
+    const accepted = guests.filter(g => g.attending).length;
+    const question = guests.filter(g => g.isQuestion).length;
+    const inactive = guests.filter(g => !g.attending).length;
+    const totalSeats = tables.reduce((n,t)=>n+t.seats.length,0);
+    const seated = tables.reduce((n,t)=>n+t.seats.filter(s => s.guestId && getGuestById(s.guestId)?.attending).length,0);
+    $("totalGuests").textContent = total;
+    $("acceptedCount").textContent = accepted;
+    $("questionCount").textContent = question;
+    $("inactiveCount").textContent = inactive;
+    $("seatedCount").textContent = seated;
+    $("freeSeatsCount").textContent = Math.max(totalSeats - seated, 0);
+  }
+
+  function populateGroupSelects(){
+    const groups = uniqLabels([...DEFAULT_GROUPS, ...guests.map(g => g.group).filter(Boolean)]).sort((a,b)=>a.localeCompare(b,'ru'));
+    ["newGuestGroup"].forEach(id => {
+      const sel = $(id);
+      sel.innerHTML = groups.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join("");
+    });
+  }
+
+  async function saveCloudState({silent=false} = {}){
+    if (!initSupabase()) return false;
+    if (!silent) setCloudStatus("☁️ Сохранение...", "#e6cc86");
+    const payload = serializeState();
+    const { error } = await supabaseClient.from("app_state").upsert({ id: CLOUD_CONFIG.stateId, payload }, { onConflict: "id" });
+    if (error) {
+      console.error(error);
+      setCloudStatus("☁️ Ошибка сохранения", "#e7cfc7");
+      return false;
+    }
+    setCloudStatus("☁️ Все изменения сохранены", "#d6e3ca");
+    return true;
+  }
+
+  async function loadCloudState({silent=false} = {}){
+    if (!initSupabase()) return false;
+    if (!silent) setCloudStatus("☁️ Загрузка...", "#e6cc86");
+    const { data, error } = await supabaseClient.from("app_state").select("payload, updated_at").eq("id", CLOUD_CONFIG.stateId).maybeSingle();
+    if (error) {
+      console.error(error);
+      setCloudStatus("☁️ Ошибка загрузки", "#e7cfc7");
+      return false;
+    }
+    if (!data || !data.payload) {
+      setCloudStatus("☁️ Облако пустое", "#efe6d8");
+      return false;
+    }
+    applyState(data.payload, "☁️ Облако Supabase");
+    setLoadStatus("☁️ Загружено из облака", "#d6e3ca");
+    setCloudStatus("☁️ Данные актуальны", "#d6e3ca");
+    return true;
+  }
+
+  function scheduleCloudSave(){
+    if (!cloudConfigured()) return;
+    if (!initSupabase()) return;
+    clearTimeout(cloudSaveTimer);
+    setCloudStatus("☁️ Сохраняем…", "#efe6d8");
+    cloudSaveTimer = setTimeout(() => { saveCloudState({silent:true}); }, 900);
+  }
+
+  function persistAndRender(){
+    cleanupInvalidSeats();
+    saveState();
+    renderAll();
+    scheduleCloudSave();
+  }
+
+  function renderAll(){
+    populateGroupSelects();
+    renderLabelChips();
+    renderGuests();
+    renderTables();
+    updateStats();
+  }
+
+  async function parseWorkbook(arrayBuffer, fileName){
+    const workbook = XLSX.read(arrayBuffer, {type:'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+    if(!rows.length) throw new Error("Excel пуст");
+    const imported = rows
+      .map(row => buildGuest({
+        id: row["id"] || row["ID"],
+        name: row["Имя"] || row["name"] || row["ФИО"],
+        group: row["Группа"] || row["group"] || "Друзья",
+        sourceStatus: row["Статус"] || row["status"],
+        comment: row["Комментарии"] || row["Комментарий"] || row["comments"],
+        age: row["Возраст"] || row["age"],
+        transfer: row["Трансфер"] || row["transfer"],
+        contacts: row["Контакты"] || row["contacts"],
+        drinks: row["Напитки"] || row["drinks"],
+        required: row["Является ли гость обязательным?"] || row["Обязательный"] || row["required"],
+      }))
+      .filter(g => norm(g.name));
+
+    if(!imported.length) throw new Error("В Excel не найдены гости");
+    guests = imported;
+    initDefaultTables();
+    currentFileName = fileName;
+    labelFilter = "все";
+    statusFilter = "all";
+    searchTerm = "";
+    sortMode = "name-asc";
+    $("searchInput").value = "";
+    $("statusFilter").value = "all";
+    $("sortSelect").value = "name-asc";
+    $("fileNameStatus").textContent = fileName;
+    setLoadStatus("✅ Excel загружен", "#d6e3ca");
+    persistAndRender();
+  }
+
+  async function loadExcelFromUrl(){
+    let lastErr = null;
+    for (const fileName of AUTOFETCH_NAMES){
+      try{
+        const res = await fetch(fileName);
+        if(!res.ok) throw new Error("fetch failed");
+        const buf = await res.arrayBuffer();
+        await parseWorkbook(buf, fileName.replace("./",""));
+        return true;
+      }catch(e){ lastErr = e; }
+    }
+    console.warn("autofetch failed", lastErr);
+    return false;
+  }
+
+  function loadDemoData(){
+    guests = [
+      buildGuest({id:1,name:"Татьяна Удова",group:"Родители",sourceStatus:"Приглашение принято",required:"Да"}),
+      buildGuest({id:2,name:"Сергей Удов",group:"Родители",sourceStatus:"Приглашение принято",required:"Да",isQuestion:true,replacementName:"Дмитрий Орлов"}),
+      buildGuest({id:3,name:"Евгений Удов",group:"Семья жениха",sourceStatus:"Не приглашен",required:"Да"}),
+      buildGuest({id:4,name:"Алексей Бизюков",group:"Друзья жениха",sourceStatus:"Приглашение принято"}),
+      buildGuest({id:5,name:"Александра Вихарева",group:"Друзья жениха",sourceStatus:"Приглашение принято"}),
+      buildGuest({id:6,name:"Молекула фентанила",group:"Жених и Невеста",sourceStatus:"Приглашение принято",comment:"Тестовая запись"}),
+    ];
+    initDefaultTables();
+    currentFileName = "Локальная копия";
+    $("fileNameStatus").textContent = currentFileName;
+    setLoadStatus("💾 Локальная копия", "#f0e1cf");
+    persistAndRender();
+  }
+
+  function bindEvents(){
+    $("searchInput").addEventListener("input", e => { searchTerm = lower(e.target.value); renderGuests(); });
+    $("statusFilter").addEventListener("change", e => { statusFilter = e.target.value; renderGuests(); });
+    $("sortSelect").addEventListener("change", e => { sortMode = e.target.value; renderGuests(); });
+    $("addGuestBtn").onclick = () => {
+      addGuest($("newGuestName").value, $("newGuestGroup").value);
+      $("newGuestName").value = "";
+      $("newGuestName").focus();
+    };
+    $("newGuestName").addEventListener("keypress", e => { if(e.key === "Enter") $("addGuestBtn").click(); });
+    $("addTableBtn").onclick = () => {
+      addTable($("newTableName").value, $("newTableSeats").value);
+      $("newTableName").value = "";
+      $("newTableSeats").value = 6;
+    };
+    $("resetAllSeatsBtn").onclick = () => {
+      if(confirm("Сбросить всю рассадку?")) resetAllSeating();
+    };
+  }
+
+  window.wgm = {
+    toggleAttending, editGuestName, deleteGuest, setQuestionStatus, setReplacementName, replaceGuest, deleteTable
+  };
+
+  async function init(){
+    bindEvents();
+    const cloudLoaded = await loadCloudState({silent:false});
+    if(!cloudLoaded){
+      const restored = loadState();
+      if(!restored){
+        loadDemoData();
+      } else {
+        setCloudStatus("☁️ Работаем из локального сохранения", "#efe6d8");
+      }
+    }
+    populateGroupSelects();
+    renderAll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
