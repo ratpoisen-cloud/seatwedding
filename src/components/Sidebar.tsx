@@ -1,0 +1,132 @@
+
+import { useState } from 'react';
+import { useStore } from '../store';
+import { useModalStore } from './modals/ModalStore';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { User, Tag, Plus, Edit2, Search, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
+import { cn } from '../utils';
+
+export function Sidebar() {
+  const { guests, tagColors } = useStore();
+  const { openModal } = useModalStore();
+  const [activeTab, setActiveTab] = useState<'guests' | 'tables'>('guests');
+  const [search, setSearch] = useState('');
+
+  const filteredGuests = guests
+    .filter(g => 
+      g.name.toLowerCase().includes(search.toLowerCase()) || 
+      (g.labels[0] || g.group || '').toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const handleDragStart = (e: React.DragEvent, guestId: string) => {
+    e.dataTransfer.setData('guestId', guestId);
+    e.dataTransfer.effectAllowed = 'copyMove';
+  };
+
+  return (
+    <aside className="w-96 flex flex-col bg-bg-card border-r border-border h-full shadow-lg z-10 hidden lg:flex">
+      
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          className={cn(
+            "flex-1 py-4 font-bold text-sm transition-colors",
+            activeTab === 'guests' ? "text-primary border-b-2 border-primary" : "text-text-muted hover:bg-secondary"
+          )}
+          onClick={() => setActiveTab('guests')}
+        >
+          Гости
+        </button>
+        <button
+          className={cn(
+            "flex-1 py-4 font-bold text-sm transition-colors",
+            activeTab === 'tables' ? "text-primary border-b-2 border-primary" : "text-text-muted hover:bg-secondary"
+          )}
+          onClick={() => setActiveTab('tables')}
+        >
+          Столы
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {activeTab === 'guests' ? (
+          <div className="flex flex-col h-full p-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+              <Input 
+                placeholder="Поиск гостей..." 
+                className="pl-10"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            
+            <Button className="w-full gap-2" onClick={() => openModal('guest')}>
+              <Plus size={18} /> Новый гость
+            </Button>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              {filteredGuests.map(g => {
+                const tag = g.labels[0] || g.group;
+                const color = tagColors[tag] || '#94a3b8';
+                
+                return (
+                  <div 
+                    key={g.id}
+                    draggable={!g.seated}
+                    onDragStart={e => handleDragStart(e, g.id)}
+                    className={cn(
+                      "group flex items-center justify-between p-3 rounded-xl border border-border bg-bg-card transition-all",
+                      g.seated ? "opacity-50 border-dashed bg-secondary" : "hover:border-primary/50 hover:shadow-sm cursor-grab active:cursor-grabbing",
+                      g.isQuestion && "border-amber-300 ring-1 ring-amber-100"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}20`, color }}>
+                        <User size={16} />
+                      </div>
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="font-bold text-sm text-text-main truncate">{g.name}</span>
+                        <div className="flex items-center gap-2">
+                          {tag && <span className="text-[11px] font-semibold flex items-center gap-1" style={{ color }}><Tag size={10} /> {tag}</span>}
+                          {g.isQuestion ? (
+                            <span className="text-[11px] text-amber-600 flex items-center gap-1"><HelpCircle size={10}/> Вопрос</span>
+                          ) : g.status === 'Отклонено' ? (
+                            <span className="text-[11px] text-red-500 flex items-center gap-1"><XCircle size={10}/> Отклонено</span>
+                          ) : g.status === 'Приглашение принято' ? (
+                            <span className="text-[11px] text-emerald-600 flex items-center gap-1"><CheckCircle2 size={10}/> Принято</span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => openModal('guest', { id: g.id })}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-text-muted hover:text-primary transition-opacity focus:outline-none"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </div>
+                )
+              })}
+              {filteredGuests.length === 0 && (
+                <div className="text-center py-8 text-text-muted text-sm">
+                  {search ? 'Гостей не найдено' : 'Список гостей пуст'}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full p-4 gap-4">
+             {/* We will add table logic in the next step */}
+             <div className="text-center py-8 text-text-muted text-sm">
+                  Управление столами будет добавлено далее.
+             </div>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}

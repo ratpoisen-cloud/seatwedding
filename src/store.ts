@@ -59,6 +59,7 @@ export interface AppState {
   
   updateLandmark: (x: number, y: number) => void;
   updateTagColor: (tag: string, color: string) => void;
+  deleteTagColor: (tag: string) => void;
   
   _sync: () => Promise<void>;
 }
@@ -280,6 +281,24 @@ export const useStore = create<AppState>((set, get) => ({
   
   updateTagColor: (tag, color) => {
     set(state => ({ tagColors: { ...state.tagColors, [tag]: color } }));
+    get()._sync();
+  },
+
+  deleteTagColor: (tag) => {
+    set(state => {
+      const newTagColors = { ...state.tagColors };
+      delete newTagColors[tag];
+      
+      // Also remove this tag from guests who have it as their primary label
+      const newGuests = state.guests.map(g => {
+        if (g.labels[0] === tag) {
+          return { ...g, labels: [] };
+        }
+        return g;
+      });
+      
+      return { tagColors: newTagColors, guests: newGuests };
+    });
     get()._sync();
   }
 }));
