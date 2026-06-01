@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useStore } from './store';
 import { subscribeToWedding } from './firebase';
@@ -6,6 +5,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { GuestModal } from './components/modals/GuestModal';
 import { TagsModal } from './components/modals/TagsModal';
+import { Canvas } from './components/canvas/Canvas';
 import { Loader2 } from 'lucide-react';
 
 function App() {
@@ -45,10 +45,7 @@ function App() {
       <div className="flex flex-1 h-[calc(100vh-72px)] overflow-hidden absolute top-[72px] inset-x-0 bottom-0">
         <Sidebar />
         <main className="flex-1 relative bg-slate-200">
-           {/* Canvas goes here in Phase 3 */}
-           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-slate-400 font-bold">Холст рассадки (Этап 3)</span>
-           </div>
+           <Canvas />
         </main>
       </div>
 
