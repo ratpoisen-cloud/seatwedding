@@ -2,231 +2,157 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wedding Seating Pro — Firebase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wedding Seating Pro V2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --primary: #8da16e;
-      --primary-dark: #6e8054;
-      --accent: #caa43f;
-      --bg: #fdfaf5;
-      --card: #ffffff;
-      --text: #2d3436;
-      --text-muted: #636e72;
-      --border: #e2e8f0;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      --radius: 12px;
-      --header-height: 70px;
-      --sidebar-width: 380px;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-    h1, h2, h3 { font-family: 'Playfair Display', serif; }
-
-    .app-container {
-      display: grid;
-      grid-template-columns: var(--sidebar-width) 1fr;
-      grid-template-rows: var(--header-height) 1fr;
-      height: 100vh;
-    }
-
-    header {
-      grid-column: 1 / -1;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; z-index: 100;
-    }
-
-    .header-actions { display: flex; gap: 12px; }
-
-    aside {
-      background: var(--card);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      overflow: hidden;
-    }
-
-    .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
-    .tab-btn { flex: 1; padding: 16px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-    .tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-
-    .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; }
-
-    .guest-card {
-      background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-      cursor: grab;
-    }
-    .guest-card.seated { opacity: 0.5; cursor: default; }
-    .guest-info h4 { font-size: 0.9rem; }
-    .guest-info p { font-size: 0.75rem; color: var(--text-muted); }
-    .guest-actions button { background: none; border: none; cursor: pointer; margin-left: 5px; }
-
-    main { position: relative; background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 40px 40px; overflow: auto; display: flex; align-items: center; justify-content: center; }
-    .canvas-container { width: 1200px; height: 800px; position: relative; transform-origin: center center; transition: transform 0.2s; }
-    #hall-svg { background: white; box-shadow: var(--shadow); cursor: crosshair; display: block; }
-
-    .table-group { cursor: move; }
-    .table-base { fill: #fff; stroke: var(--border); stroke-width: 2; }
-    .table-label { font-size: 14px; font-weight: 600; text-anchor: middle; fill: var(--text); cursor: pointer; pointer-events: all; }
-    .seat-circle { fill: #f1f5f9; stroke: var(--border); stroke-width: 1; cursor: pointer; transition: all 0.2s; pointer-events: all; }
-    .seat-circle.occupied { fill: var(--primary); }
-    
-    /* Hashtag Colors */
-    .seat-circle.tag-family { fill: #dcfce7; stroke: #86efac; }
-    .seat-circle.tag-friends { fill: #dbeafe; stroke: #93c5fd; }
-    .seat-circle.tag-work { fill: #f1f5f9; stroke: #cbd5e1; }
-    .seat-circle.tag-parents { fill: #fef9c3; stroke: #fde047; }
-    .seat-circle.tag-vip { fill: #fae8ff; stroke: #f5d0fe; }
-
-    /* Fix: Occupied color should take precedence or combine */
-    .seat-circle.occupied { fill: var(--primary) !important; }
-
-    .seat-circle.status-question { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 4; }
-    .seat-label { font-size: 10px; text-anchor: middle; pointer-events: none; fill: var(--text); font-weight: 600; }
-
-    .controls-overlay { position: absolute; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; }
-    .control-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: white; cursor: pointer; }
-
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal { background: white; padding: 30px; border-radius: var(--radius); width: 350px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; }
-    .form-control { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
-
-    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-outline { background: white; border: 1px solid var(--border); }
-    .btn-danger { background: #fee2e2; color: #dc2626; }
-
-    .drag-ghost {
-      position: fixed; pointer-events: none; background: var(--primary); color: white;
-      padding: 5px 15px; border-radius: 20px; z-index: 2000; display: none;
-    }
-
-    @media print {
-      aside, header, .controls-overlay { display: none; }
-      .app-container { display: block; }
-      #hall-svg { box-shadow: none; width: 100% !important; height: auto !important; }
-    }
-  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-  <div class="app-container">
-    <header>
-      <div class="logo"><h1>Wedding Seating Pro</h1></div>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <button class="mobile-menu-btn" id="mobile-menu-toggle">☰</button>
+        <h1>WeddingPlanner</h1>
+      </div>
       <div class="header-actions">
-        <button class="btn btn-outline" id="import-excel-btn">Импорт Excel</button>
-        <button class="btn btn-outline" id="export-excel-btn">Excel</button>
-        <button class="btn btn-primary" id="print-btn">Печать</button>
+        <button class="btn btn-icon" id="btn-settings" title="Настройки тегов">⚙️</button>
+        <button class="btn btn-secondary" id="btn-export">Экспорт Excel</button>
+        <button class="btn btn-primary" id="btn-share">Поделиться (Скриншот)</button>
       </div>
     </header>
 
-    <aside>
-      <div class="sidebar-tabs">
-        <button class="tab-btn active" data-tab="guests">Гости</button>
-        <button class="tab-btn" data-tab="tables">Столы</button>
+    <!-- Sidebar (Guests & Tables) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="tabs">
+        <button class="tab active" data-target="guests">Гости</button>
+        <button class="tab" data-target="tables">Столы</button>
       </div>
-      <div class="sidebar-content" id="sidebar-guests">
-        <input type="text" id="guest-search" class="form-control" placeholder="Поиск по имени или группе..." style="margin-bottom: 12px;">
-        <button class="btn btn-primary" id="add-guest-btn" style="width:100%; margin-bottom: 15px;">+ Добавить гостя</button>
-        <div id="guests-list"></div>
-      </div>
-      <div class="sidebar-content" id="sidebar-tables" style="display:none;">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <button class="btn btn-outline" onclick="addTable('round')">Круглый</button>
-          <button class="btn btn-outline" onclick="addTable('rect')">Прямоуг.</button>
+      
+      <div class="tab-content active" id="tab-guests">
+        <div class="search-bar">
+          <input type="text" id="search-guests" placeholder="Поиск гостей...">
         </div>
+        <button class="btn btn-primary full-width" id="btn-add-guest">+ Новый гость</button>
+        <div class="guest-list" id="guest-list"></div>
+      </div>
+
+      <div class="tab-content" id="tab-tables">
+        <div class="table-actions">
+          <button class="btn btn-secondary full-width" id="btn-add-round-table">⚪ Круглый стол</button>
+          <button class="btn btn-secondary full-width" id="btn-add-rect-table">▭ Прямоугольный</button>
+        </div>
+        <div class="table-list" id="table-list"></div>
       </div>
     </aside>
 
-    <main>
-      <div class="canvas-container">
-        <svg id="hall-svg" width="1200" height="800" viewBox="0 0 1200 800">
-          <g id="landmark-content"></g>
-          <g id="hall-content"></g>
+    <!-- Main Canvas Area -->
+    <main class="canvas-area" id="canvas-wrapper">
+      <div class="canvas-container" id="canvas-container">
+        <svg id="hall-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+          <defs>
+            <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#cbd5e1" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+          <g id="svg-landmark"></g>
+          <g id="svg-tables"></g>
         </svg>
       </div>
-      <div class="controls-overlay">
-        <button class="control-btn" id="zoom-in">+</button>
-        <button class="control-btn" id="zoom-out">-</button>
-        <button class="control-btn" id="zoom-reset">⟲</button>
+      <div class="zoom-controls">
+        <button class="btn-zoom" id="btn-zoom-in">+</button>
+        <button class="btn-zoom" id="btn-zoom-reset">100%</button>
+        <button class="btn-zoom" id="btn-zoom-out">-</button>
       </div>
     </main>
   </div>
 
+  <!-- Drag Ghost -->
   <div id="drag-ghost" class="drag-ghost"></div>
 
-  <input type="file" id="file-input" style="display:none" accept=".xlsx, .xls">
-
-  <!-- Context Menu -->
-  <div id="ctx-menu" style="display:none; position:fixed; background:white; border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow); z-index:3000; flex-direction:column; padding:8px; min-width:180px;">
-    <button class="btn btn-outline" id="ctx-toggle-q" style="text-align:left; border:none; margin-bottom:4px;">❓ Статус: Вопрос</button>
-    <button class="btn btn-outline" id="ctx-unseat" style="text-align:left; border:none; color:#dc2626;">🚫 Убрать с места</button>
-  </div>
-
-  <div id="modal-overlay" class="modal-overlay">
-    <!-- Table Modal -->
-    <div class="modal" id="table-modal" style="display:none;">
-      <h3>Настройка стола</h3>
-      <div class="form-group">
-        <label>Название</label>
-        <input type="text" id="edit-table-name" class="form-control">
-      </div>
-      <div class="form-group">
-        <label>Угол поворота</label>
-        <input type="number" id="edit-table-rotation" class="form-control" step="15">
-      </div>
-      <div style="display:flex; justify-content: space-between; margin-top: 20px;">
-        <button class="btn btn-danger" onclick="app.deleteTable()">Удалить</button>
-        <div>
-          <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
-          <button class="btn btn-primary" onclick="app.saveTableSettings()">ОК</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Guest Modal -->
-    <div class="modal" id="guest-modal" style="display:none;">
-      <h3>Редактирование гостя</h3>
-      <div class="form-group">
+  <!-- Modals -->
+  <div class="modal-overlay" id="modal-overlay">
+    
+    <!-- Guest Edit Modal -->
+    <div class="modal" id="modal-guest">
+      <h2 id="guest-modal-title">Редактировать гостя</h2>
+      <div class="input-group">
         <label>Имя и фамилия</label>
-        <input type="text" id="edit-guest-name" class="form-control">
+        <input type="text" id="inp-guest-name" placeholder="Иван Иванов">
       </div>
-      <div class="form-group">
-        <label>Группа</label>
-        <input type="text" id="edit-guest-group" class="form-control">
+      <div class="input-group">
+        <label>Группа / Тег (определяет цвет)</label>
+        <select id="inp-guest-tag"></select>
       </div>
-      <div class="form-group">
-        <label>Метки (через запятую или пробел)</label>
-        <input type="text" id="edit-guest-labels" class="form-control" placeholder="#семья #vip">
-      </div>
-      <div class="form-group">
+      <div class="input-group">
         <label>Статус</label>
-        <select id="edit-guest-status" class="form-control">
-          <option value="Приглашение принято">Принято</option>
-          <option value="Под вопросом">Под вопросом</option>
-          <option value="Отклонено">Отклонено</option>
-          <option value="Не приглашен">Не приглашен</option>
+        <select id="inp-guest-status">
+          <option value="Принято">✅ Принято</option>
+          <option value="Под вопросом">❓ Под вопросом</option>
+          <option value="Отклонено">❌ Отклонено</option>
         </select>
       </div>
-      <div style="display:flex; justify-content: space-between; margin-top: 20px;">
-        <button class="btn btn-danger" id="delete-guest-modal-btn">Удалить гостя</button>
-        <div>
-          <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
-          <button class="btn btn-primary" onclick="app.saveGuestSettings()">Сохранить</button>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-guest-delete">Удалить</button>
+        <div class="footer-right">
+          <button class="btn btn-text btn-cancel">Отмена</button>
+          <button class="btn btn-primary" id="btn-guest-save">Сохранить</button>
         </div>
       </div>
     </div>
+
+    <!-- Table Edit Modal -->
+    <div class="modal" id="modal-table">
+      <h2>Настройки стола</h2>
+      <div class="input-group">
+        <label>Название</label>
+        <input type="text" id="inp-table-name">
+      </div>
+      <div class="input-group" style="display: flex; gap: 16px;">
+        <div style="flex: 1;">
+          <label>Мест</label>
+          <input type="number" id="inp-table-seats" min="1" max="24">
+        </div>
+        <div style="flex: 1;">
+          <label>Поворот (°)</label>
+          <input type="number" id="inp-table-rotation" step="15" value="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-table-delete">Удалить стол</button>
+        <div class="footer-right">
+          <button class="btn btn-text btn-cancel">Отмена</button>
+          <button class="btn btn-primary" id="btn-table-save">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags Settings Modal -->
+    <div class="modal" id="modal-tags">
+      <h2>Настройка групп и цветов</h2>
+      <p class="modal-subtitle">Эти цвета используются для мест на плане рассадки.</p>
+      <div id="tags-list" class="tags-editor-list"></div>
+      <button class="btn btn-secondary full-width" id="btn-add-tag">+ Добавить группу</button>
+      <div class="modal-footer" style="margin-top: 24px;">
+        <button class="btn btn-text btn-cancel" style="margin-left: auto;">Закрыть</button>
+      </div>
+    </div>
+
+    <!-- Seat Action Modal -->
+    <div class="modal" id="modal-seat-action">
+      <h2 id="seat-action-title">Действие</h2>
+      <div class="seat-action-buttons">
+        <button class="btn btn-primary full-width" id="btn-seat-swap">🔄 Заменить гостя</button>
+        <button class="btn btn-secondary full-width" id="btn-seat-question">❓ Под вопросом</button>
+        <button class="btn btn-danger full-width" id="btn-seat-unseat">Убрать с места</button>
+      </div>
+      <button class="btn btn-text btn-cancel full-width" style="margin-top: 12px;">Отмена</button>
+    </div>
+
   </div>
 
   <script type="module" src="/src/main.js"></script>
