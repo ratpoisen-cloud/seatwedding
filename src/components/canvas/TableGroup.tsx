@@ -4,9 +4,10 @@ import { type Table, useStore } from '../../store';
 interface TableGroupProps {
   table: Table;
   onEdit: () => void;
+  hoveredTarget?: { tableId: string | number, seatIdx: number } | null;
 }
 
-export function TableGroup({ table, onEdit }: TableGroupProps) {
+export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
   const { guests, tagColors } = useStore();
 
   const roundRadius = 60;
@@ -73,7 +74,10 @@ export function TableGroup({ table, onEdit }: TableGroupProps) {
         }
 
         const guest = guestId ? guests.find(g => g.id === guestId) : null;
+        // In V3, we mapped tags to labels[0] or tag. Let's use labels[0] or group for color.
         const tagColor = guest?.labels?.[0] ? tagColors[guest.labels[0]] : null;
+        
+        const isHovered = hoveredTarget?.tableId === String(table.id) && hoveredTarget?.seatIdx === idx;
         
         return (
           <g key={`${table.id}-seat-${idx}`} className="canvas-seat" data-table-id={table.id} data-seat-idx={idx}>
@@ -84,11 +88,11 @@ export function TableGroup({ table, onEdit }: TableGroupProps) {
               className={`stroke-2 cursor-pointer transition-all hover:brightness-95 hover:stroke-[3px] pointer-events-auto ${guest?.isQuestion ? 'stroke-dashed animate-[pulse-stroke_2s_infinite]' : ''}`}
               style={{
                 fill: tagColor || (guest ? '#6366f1' : '#f1f5f9'),
-                stroke: tagColor || (guest ? '#4f46e5' : '#cbd5e1'),
+                stroke: isHovered ? '#000' : (tagColor || (guest ? '#4f46e5' : '#cbd5e1')),
+                strokeWidth: isHovered ? 4 : undefined
               }}
               onPointerDown={() => {
-                // If there's a guest, maybe we initiate drag. But Canvas.tsx handles this roughly.
-                // We'll refine seat interactions in phase 4.
+                // Handled in Canvas
               }}
             >
               {guest && <title>{guest.name} ({guest.group})</title>}

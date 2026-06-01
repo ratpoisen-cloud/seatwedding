@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { GuestModal } from './components/modals/GuestModal';
 import { TagsModal } from './components/modals/TagsModal';
+import { SeatActionModal } from './components/modals/SeatActionModal';
 import { Canvas } from './components/canvas/Canvas';
 import { Loader2 } from 'lucide-react';
 
@@ -51,6 +52,7 @@ function App() {
 
       <GuestModal />
       <TagsModal />
+      <SeatActionModal />
       
       {/* Global Sync Indicator */}
       {isSyncing && (

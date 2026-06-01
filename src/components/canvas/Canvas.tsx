@@ -20,13 +20,22 @@ export function Canvas() {
   
   // Interaction tracking
   const dragInfo = useRef<{
-    type: 'pan' | 'landmark' | 'table' | null;
+    type: 'pan' | 'landmark' | 'table' | 'guest' | null;
     id?: string | number;
+    guestId?: string;
+    tableId?: string | number;
+    seatIdx?: number;
     startX: number;
     startY: number;
     initialPan?: { x: number, y: number };
     initialObj?: { x: number, y: number };
   }>({ type: null, startX: 0, startY: 0 });
+
+  const [draggedGuestId, setDraggedGuestId] = useState<string | null>(null);
+  const [hoveredTarget, setHoveredTarget] = useState<{tableId: string | number, seatIdx: number} | null>(null);
+  
+  const ghostRef = useRef<HTMLDivElement>(null);
+
 
   // Sync local state when global changes (e.g. from Firebase)
   useEffect(() => {
@@ -57,6 +66,9 @@ export function Canvas() {
     if (!pt) return;
 
     const target = e.target as HTMLElement;
+    const tableGroup = target.closest('.canvas-table');
+    const isSeat = target.closest('.canvas-seat');
+    const isLabel = target.tagName === 'text';
 
     // 1. Dragging Landmark
     if (target.closest('.canvas-landmark')) {
@@ -70,11 +82,35 @@ export function Canvas() {
       return;
     }
 
-    // 2. Dragging Table
-    const tableGroup = target.closest('.canvas-table');
-    const isSeat = target.closest('.canvas-seat');
-    const isLabel = target.tagName === 'text';
+    // 1.5. Dragging Guest (Seat interaction)
+    if (isSeat) {
+      const tableId = (isSeat as HTMLElement).dataset.tableId;
+      const seatIdx = parseInt((isSeat as HTMLElement).dataset.seatIdx || '-1');
+      const table = localTables.find(t => String(t.id) === tableId);
+      
+      if (table && seatIdx >= 0) {
+        const guestId = table.seats[seatIdx];
+        
+        if (guestId) {
+          // Occupied seat - prepare for potential drag or click
+          e.currentTarget.setPointerCapture(e.pointerId);
+          dragInfo.current = {
+            type: 'guest',
+            guestId,
+            tableId,
+            seatIdx,
+            startX: e.clientX,
+            startY: e.clientY
+          };
+        } else {
+          // Empty seat click - Open modal to add guest
+          openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
+        }
+      }
+      return;
+    }
 
+    // 2. Dragging Table
     if (tableGroup && !isSeat && !isLabel) {
       e.currentTarget.setPointerCapture(e.pointerId);
       const id = (tableGroup as HTMLElement).dataset.id;
@@ -115,6 +151,36 @@ export function Canvas() {
       return;
     }
 
+    if (dragInfo.current.type === 'guest') {
+      const dx = Math.abs(e.clientX - dragInfo.current.startX);
+      const dy = Math.abs(e.clientY - dragInfo.current.startY);
+      
+      // Threshold to start drag vs click
+      if (!draggedGuestId && (dx > 5 || dy > 5)) {
+        setDraggedGuestId(dragInfo.current.guestId!);
+      }
+
+      if (draggedGuestId && ghostRef.current) {
+        ghostRef.current.style.display = 'block';
+        ghostRef.current.style.left = `${e.clientX + 10}px`;
+        ghostRef.current.style.top = `${e.clientY + 10}px`;
+
+        // Hit test for hovered seat
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        const seatEl = elements.find(el => el.classList.contains('canvas-seat')) as HTMLElement;
+        if (seatEl) {
+          const tableId = seatEl.dataset.tableId;
+          const seatIdx = parseInt(seatEl.dataset.seatIdx || '-1');
+          if (tableId && seatIdx >= 0) {
+            setHoveredTarget({ tableId, seatIdx });
+          }
+        } else {
+          setHoveredTarget(null);
+        }
+      }
+      return;
+    }
+
     const pt = getSVGPoint(e);
     if (!pt || !dragInfo.current.initialObj) return;
     
@@ -148,6 +214,36 @@ export function Canvas() {
       const table = localTables.find(t => t.id === dragInfo.current.id);
       if (table) {
         updateTable(table.id, { x: table.x, y: table.y });
+      }
+    }
+
+    if (dragInfo.current.type === 'guest') {
+      if (draggedGuestId) {
+        // Was dragging
+        if (hoveredTarget) {
+          useStore.getState().swapSeats(draggedGuestId, hoveredTarget.tableId, hoveredTarget.seatIdx);
+        } else {
+          // Dropped on empty space - unseat? 
+          // A good UX choice: drag to empty space unseats the guest.
+          if (dragInfo.current.tableId && dragInfo.current.seatIdx !== undefined) {
+             useStore.getState().unseatGuest(dragInfo.current.tableId, dragInfo.current.seatIdx);
+          }
+        }
+      } else {
+        // Was a click
+        if (dragInfo.current.tableId && dragInfo.current.seatIdx !== undefined) {
+          openModal('seatAction', { 
+            guestId: dragInfo.current.guestId, 
+            tableId: dragInfo.current.tableId, 
+            seatIdx: dragInfo.current.seatIdx 
+          });
+        }
+      }
+      
+      setDraggedGuestId(null);
+      setHoveredTarget(null);
+      if (ghostRef.current) {
+        ghostRef.current.style.display = 'none';
       }
     }
 
@@ -218,6 +314,7 @@ export function Canvas() {
               key={table.id} 
               table={table} 
               onEdit={() => openModal('table', { id: table.id })}
+              hoveredTarget={hoveredTarget}
             />
           ))}
         </g>
@@ -228,6 +325,13 @@ export function Canvas() {
         <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">+</button>
         <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700">100%</button>
         <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">-</button>
+      </div>
+
+      <div 
+        ref={ghostRef} 
+        className="fixed pointer-events-none z-[9999] hidden bg-bg-card text-text-main font-ui font-bold text-sm px-4 py-2 rounded-full shadow-lg border border-primary opacity-90 -translate-x-1/2 -translate-y-1/2"
+      >
+        {draggedGuestId ? useStore.getState().guests.find(g => g.id === draggedGuestId)?.name : ''}
       </div>
     </div>
   );
