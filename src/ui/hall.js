@@ -38,29 +38,37 @@ const getSVGPoint = (e) => {
 const handleMouseDown = (e) => {
   const pt = getSVGPoint(e);
   
-  // Check for Table Drag
-  const tableGroup = e.target.closest('.table-group');
-  if (tableGroup) {
-    const id = tableGroup.dataset.id;
-    const table = state.tables.find(t => t.id === id);
-    state.draggedTable = table;
-    state.isDragging = true;
-    state.dragOffset = { x: pt.x - table.x, y: pt.y - table.y };
-    return;
-  }
-
-  // Check for Landmark Drag
+  // Check for Landmark Drag first
   if (e.target.closest('.landmark')) {
     state.draggedLandmark = true;
     state.isDragging = true;
     state.dragOffset = { x: pt.x - state.landmark.x, y: pt.y - state.landmark.y };
     return;
   }
+
+  // Check for Table Drag
+  const tableGroup = e.target.closest('.table-group');
+  const isSeat = e.target.closest('.seat-circle');
+  const isText = e.target.tagName === 'text';
+
+  if (tableGroup && !isSeat && !isText) {
+    const id = tableGroup.dataset.id;
+    const table = state.tables.find(t => t.id === id);
+    if (table) {
+      state.draggedTable = table;
+      state.isDragging = true;
+      state.dragOffset = { x: pt.x - table.x, y: pt.y - table.y };
+      document.querySelector('.canvas-container').style.transition = 'none';
+    }
+    return;
+  }
 };
 
 const handleMouseMove = (e) => {
+  if (!state.isDragging && !state.draggedGuest) return;
+  const pt = getSVGPoint(e);
+
   if (state.draggedTable) {
-    const pt = getSVGPoint(e);
     state.draggedTable.x = pt.x - state.dragOffset.x;
     state.draggedTable.y = pt.y - state.dragOffset.y;
     const el = document.querySelector(`.table-group[data-id="${state.draggedTable.id}"]`);
@@ -68,7 +76,6 @@ const handleMouseMove = (e) => {
   }
 
   if (state.draggedLandmark) {
-    const pt = getSVGPoint(e);
     state.landmark.x = pt.x - state.dragOffset.x;
     state.landmark.y = pt.y - state.dragOffset.y;
     const el = document.querySelector('.landmark');
@@ -89,6 +96,7 @@ const handleMouseUp = () => {
   
   if (state.isDragging) {
     updateState({}); // Final sync to Firebase
+    document.querySelector('.canvas-container').style.transition = '';
   }
 
   state.draggedTable = null;
