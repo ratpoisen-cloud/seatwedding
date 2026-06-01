@@ -11,7 +11,9 @@ export const state = {
   draggedTable: null,
   draggedLandmark: false,
   hoveredSeat: null,
-  isDragging: false
+  isDragging: false,
+  selectedSeatGuest: null,
+  selectedSeatData: null
 };
 
 const listeners = [];
@@ -43,7 +45,7 @@ export const addGuest = (guest) => {
     name: guest.name || 'Новый гость',
     group: guest.group || 'Друзья',
     status: guest.status || 'Приглашение принято',
-    label: guest.label || '', // Custom label
+    label: guest.label || '',
     isQuestion: false,
     seated: false,
     ...guest
@@ -89,7 +91,10 @@ export const deleteTable = (id) => {
 export const assignSeat = (guestId, tableId, seatIdx) => {
   const guest = state.guests.find(g => g.id === guestId);
   const table = state.tables.find(t => t.id === tableId);
-  if (!guest || !table || table.seats[seatIdx]) return;
+  if (!guest || !table) return;
+
+  if (seatIdx < 0 || seatIdx >= table.seats.length) return;
+  if (table.seats[seatIdx]) return;
 
   const tables = state.tables.map(t => {
     if (t.id === tableId) {
@@ -107,6 +112,8 @@ export const assignSeat = (guestId, tableId, seatIdx) => {
 export const unseatGuest = (tableId, seatIdx) => {
   const table = state.tables.find(t => t.id === tableId);
   if (!table) return;
+  
+  if (seatIdx < 0 || seatIdx >= table.seats.length) return;
   const guestId = table.seats[seatIdx];
   
   const tables = state.tables.map(t => {

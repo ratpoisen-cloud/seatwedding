@@ -39,11 +39,44 @@ const app = {
 
     document.getElementById('print-btn').onclick = () => window.print();
     document.getElementById('export-excel-btn').onclick = () => this.exportToExcel();
+    
+    // Search
+    document.getElementById('guest-search').oninput = (e) => this.renderGuests(e.target.value);
 
+    // Import Excel
+    document.getElementById('import-excel-btn').onclick = () => document.getElementById('file-input').click();
+    document.getElementById('file-input').onchange = (e) => this.handleImport(e);
+
+    // Close Modals
     window.closeModal = () => {
       document.getElementById('modal-overlay').style.display = 'none';
       document.getElementById('table-modal').style.display = 'none';
       document.getElementById('guest-modal').style.display = 'none';
+    };
+
+    document.getElementById('modal-overlay').onclick = (e) => {
+      if (e.target === e.currentTarget) window.closeModal();
+    };
+
+    // Context Menu persistent bindings
+    document.getElementById('ctx-toggle-q').onclick = () => {
+      if (!state.selectedSeatGuest) return;
+      const guest = state.selectedSeatGuest;
+      guest.isQuestion = !guest.isQuestion;
+      guest.status = guest.isQuestion ? 'Под вопросом' : 'Приглашение принято';
+      updateState({});
+      document.getElementById('ctx-menu').style.display = 'none';
+    };
+
+    document.getElementById('ctx-unseat').onclick = () => {
+      if (!state.selectedSeatData) return;
+      const { tableId, idx } = state.selectedSeatData;
+      unseatGuest(tableId, idx);
+      document.getElementById('ctx-menu').style.display = 'none';
+    };
+
+    window.onclick = () => {
+      document.getElementById('ctx-menu').style.display = 'none';
     };
   },
 
@@ -54,25 +87,47 @@ const app = {
   },
 
   render() {
-    this.renderGuests();
+    this.renderGuests(document.getElementById('guest-search').value);
     renderHall();
   },
 
-  renderGuests() {
+  renderGuests(search = '') {
     const list = document.getElementById('guests-list');
     list.innerHTML = '';
-    state.guests.sort((a, b) => a.name.localeCompare(b.name)).forEach(g => {
+    const filtered = state.guests
+      .filter(g => 
+        (g.name || '').toLowerCase().includes(search.toLowerCase()) || 
+        (g.group || '').toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    filtered.forEach(g => {
       const card = document.createElement('div');
       card.className = `guest-card ${g.seated ? 'seated' : ''}`;
-      card.innerHTML = `
-        <div class="guest-info">
-          <h4>${g.name}</h4>
-          <p>${g.group} ${g.label ? `<br><small>${g.label}</small>` : ''}</p>
-        </div>
-        <div class="guest-actions">
-           <button onclick="app.editGuest('${g.id}')">✏️</button>
-        </div>
-      `;
+      
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'guest-info';
+      
+      const nameH4 = document.createElement('h4');
+      nameH4.textContent = g.name || 'Без имени';
+      infoDiv.appendChild(nameH4);
+      
+      const p = document.createElement('p');
+      p.textContent = `${g.group || 'Без группы'} ${g.label ? ` (${g.label})` : ''}`;
+      infoDiv.appendChild(p);
+      
+      card.appendChild(infoDiv);
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'guest-actions';
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '✏️';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.editGuest(g.id);
+      };
+      actionsDiv.appendChild(editBtn);
+      card.appendChild(actionsDiv);
       
       const startDrag = (e) => {
         if (g.seated) return;
@@ -80,8 +135,8 @@ const app = {
         const ghost = document.getElementById('drag-ghost');
         ghost.textContent = g.name;
         ghost.style.display = 'block';
-        ghost.style.left = (e.clientX || e.touches[0].clientX) + 10 + 'px';
-        ghost.style.top = (e.clientY || e.touches[0].clientY) + 10 + 'px';
+        ghost.style.left = (e.clientX || (e.touches && e.touches[0].clientX)) + 10 + 'px';
+        ghost.style.top = (e.clientY || (e.touches && e.touches[0].clientY)) + 10 + 'px';
       };
 
       card.onmousedown = startDrag;
@@ -113,7 +168,7 @@ const app = {
   },
 
   deleteTable() {
-    if (confirm('Удалить стол?')) {
+    if (confirm('Удалить стол? Все гости будут убраны с мест.')) {
       deleteTable(state.selectedTable.id);
       window.closeModal();
     }
@@ -122,12 +177,13 @@ const app = {
   openGuestModal(id = null) {
     const isEdit = id !== null;
     const g = isEdit ? state.guests.find(gu => gu.id === id) : { name: '', group: 'Друзья', label: '', status: 'Приглашение принято' };
+    if (!g) return;
     state.selectedGuest = isEdit ? g : null;
 
-    document.getElementById('edit-guest-name').value = g.name;
-    document.getElementById('edit-guest-group').value = g.group;
+    document.getElementById('edit-guest-name').value = g.name || '';
+    document.getElementById('edit-guest-group').value = g.group || 'Друзья';
     document.getElementById('edit-guest-labels').value = g.label || '';
-    document.getElementById('edit-guest-status').value = g.status;
+    document.getElementById('edit-guest-status').value = g.status || 'Приглашение принято';
 
     const deleteBtn = document.getElementById('delete-guest-modal-btn');
     deleteBtn.style.display = isEdit ? 'block' : 'none';
@@ -152,11 +208,9 @@ const app = {
     if (!name) return alert('Введите имя');
 
     if (state.selectedGuest) {
-      // Edit
       const guests = state.guests.map(gu => gu.id === state.selectedGuest.id ? { ...gu, name, group, label, status } : gu);
       updateState({ guests });
     } else {
-      // Add
       addGuest({ name, group, label, status });
     }
     window.closeModal();
@@ -164,6 +218,55 @@ const app = {
 
   editGuest(id) {
     this.openGuestModal(id);
+  },
+
+  openSeatMenu(e, tableId, idx, guestId) {
+    const menu = document.getElementById('ctx-menu');
+    const guest = state.guests.find(g => g.id === guestId);
+    if (!guest) return;
+
+    state.selectedSeatGuest = guest;
+    state.selectedSeatData = { tableId, idx };
+
+    menu.style.display = 'flex';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    e.stopPropagation();
+  },
+
+  handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (state.guests.length > 0 && !confirm('Импорт заменит всех текущих гостей. Продолжить?')) {
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const guests = rows.map((row, i) => ({
+          id: String(row.id || 'g' + i + Date.now()),
+          name: String(row['Имя'] || row.name || 'Гость ' + (i+1)),
+          group: String(row['Группа'] || row.group || 'Друзья'),
+          status: String(row['Статус'] || row.status || 'Приглашение принято'),
+          label: String(row['Метки'] || row.label || ''),
+          seated: false
+        }));
+
+        updateState({ guests });
+      } catch (err) {
+        alert('Ошибка импорта');
+      }
+      e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
   },
 
   exportToExcel() {

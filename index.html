@@ -85,6 +85,9 @@
     .seat-circle.tag-parents { fill: #fef9c3; stroke: #fde047; }
     .seat-circle.tag-vip { fill: #fae8ff; stroke: #f5d0fe; }
 
+    /* Fix: Occupied color should take precedence or combine */
+    .seat-circle.occupied { fill: var(--primary) !important; }
+
     .seat-circle.status-question { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 4; }
     .seat-label { font-size: 10px; text-anchor: middle; pointer-events: none; fill: var(--text); font-weight: 600; }
 
@@ -122,6 +125,7 @@
     <header>
       <div class="logo"><h1>Wedding Seating Pro</h1></div>
       <div class="header-actions">
+        <button class="btn btn-outline" id="import-excel-btn">Импорт Excel</button>
         <button class="btn btn-outline" id="export-excel-btn">Excel</button>
         <button class="btn btn-primary" id="print-btn">Печать</button>
       </div>
@@ -133,6 +137,7 @@
         <button class="tab-btn" data-tab="tables">Столы</button>
       </div>
       <div class="sidebar-content" id="sidebar-guests">
+        <input type="text" id="guest-search" class="form-control" placeholder="Поиск по имени или группе..." style="margin-bottom: 12px;">
         <button class="btn btn-primary" id="add-guest-btn" style="width:100%; margin-bottom: 15px;">+ Добавить гостя</button>
         <div id="guests-list"></div>
       </div>
@@ -160,6 +165,14 @@
   </div>
 
   <div id="drag-ghost" class="drag-ghost"></div>
+
+  <input type="file" id="file-input" style="display:none" accept=".xlsx, .xls">
+
+  <!-- Context Menu -->
+  <div id="ctx-menu" style="display:none; position:fixed; background:white; border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow); z-index:3000; flex-direction:column; padding:8px; min-width:180px;">
+    <button class="btn btn-outline" id="ctx-toggle-q" style="text-align:left; border:none; margin-bottom:4px;">❓ Статус: Вопрос</button>
+    <button class="btn btn-outline" id="ctx-unseat" style="text-align:left; border:none; color:#dc2626;">🚫 Убрать с места</button>
+  </div>
 
   <div id="modal-overlay" class="modal-overlay">
     <!-- Table Modal -->

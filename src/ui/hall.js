@@ -32,11 +32,14 @@ const getSVGPoint = (e) => {
   const pt = svg.createSVGPoint();
   pt.x = e.clientX;
   pt.y = e.clientY;
-  return pt.matrixTransform(svg.getScreenCTM().inverse());
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  return pt.matrixTransform(ctm.inverse());
 };
 
 const handleMouseDown = (e) => {
   const pt = getSVGPoint(e);
+  if (!pt) return;
   
   // Check for Landmark Drag first
   if (e.target.closest('.landmark')) {
@@ -58,7 +61,8 @@ const handleMouseDown = (e) => {
       state.draggedTable = table;
       state.isDragging = true;
       state.dragOffset = { x: pt.x - table.x, y: pt.y - table.y };
-      document.querySelector('.canvas-container').style.transition = 'none';
+      const container = document.querySelector('.canvas-container');
+      if (container) container.style.transition = 'none';
     }
     return;
   }
@@ -67,6 +71,7 @@ const handleMouseDown = (e) => {
 const handleMouseMove = (e) => {
   if (!state.isDragging && !state.draggedGuest) return;
   const pt = getSVGPoint(e);
+  if (!pt) return;
 
   if (state.draggedTable) {
     state.draggedTable.x = pt.x - state.dragOffset.x;
@@ -96,7 +101,8 @@ const handleMouseUp = () => {
   
   if (state.isDragging) {
     updateState({}); // Final sync to Firebase
-    document.querySelector('.canvas-container').style.transition = '';
+    const container = document.querySelector('.canvas-container');
+    if (container) container.style.transition = '';
   }
 
   state.draggedTable = null;
@@ -110,7 +116,6 @@ export const renderHall = () => {
   const container = document.getElementById('hall-content');
   const landmarkContainer = document.getElementById('landmark-content');
   
-  // Landmark (Mushroom)
   landmarkContainer.innerHTML = `
     <g class="landmark" style="cursor: move;" transform="translate(${state.landmark.x}, ${state.landmark.y})">
       <path d="M-40,0 a 40,40 0 1,1 80,0 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" />
@@ -121,7 +126,6 @@ export const renderHall = () => {
     </g>
   `;
 
-  // Tables
   container.innerHTML = '';
   state.tables.forEach(table => {
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -142,7 +146,6 @@ export const renderHall = () => {
     }
     group.appendChild(base);
 
-    // Label
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.setAttribute("class", "table-label");
     text.setAttribute("y", 5);
@@ -153,7 +156,6 @@ export const renderHall = () => {
     };
     group.appendChild(text);
 
-    // Seats
     table.seats.forEach((guestId, idx) => {
       const seat = createSeat(table, idx, guestId);
       group.appendChild(seat);
@@ -193,14 +195,21 @@ const createSeat = (table, idx, guestId) => {
     cls += ' occupied';
     const labels = (guest.label || '').toLowerCase();
     if (labels.includes('семья') || labels.includes('родные')) cls += ' tag-family';
-    else if (labels.includes('друзья')) cls += ' tag-friends';
-    else if (labels.includes('коллеги')) cls += ' tag-work';
-    else if (labels.includes('родители')) cls += ' tag-parents';
+    else if (labels.includes('друг')) cls += ' tag-friends';
+    else if (labels.includes('коллег') || labels.includes('работ')) cls += ' tag-work';
+    else if (labels.includes('родител')) cls += ' tag-parents';
     else if (labels.includes('vip')) cls += ' tag-vip';
 
     if (guest.status === 'Под вопросом' || guest.isQuestion) cls += ' status-question';
   }
   circle.setAttribute('class', cls);
+
+  // SVG Native tooltip
+  if (guest) {
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = `${guest.name} (${guest.group})`;
+    circle.appendChild(title);
+  }
 
   circle.onmouseover = () => {
     if (state.draggedGuest) {
@@ -214,7 +223,7 @@ const createSeat = (table, idx, guestId) => {
   };
   circle.onclick = (e) => {
     e.stopPropagation();
-    if (guestId) window.app.editGuest(guestId);
+    if (guestId) window.app.openSeatMenu(e, table.id, idx, guestId);
     else if (state.draggedGuest) {
        assignSeat(state.draggedGuest.id, table.id, idx);
     }
@@ -228,7 +237,7 @@ const createSeat = (table, idx, guestId) => {
     label.setAttribute("y", y + (y > 0 ? 25 : -15));
     label.setAttribute("class", "seat-label");
     label.setAttribute("transform", `rotate(${-table.rotation}, ${x}, ${y + (y > 0 ? 25 : -15)})`);
-    label.textContent = guest.name.split(' ')[0];
+    label.textContent = (guest.name || '').split(' ')[0];
     g.appendChild(label);
   }
 
