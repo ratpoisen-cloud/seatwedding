@@ -93,7 +93,9 @@ export const assignSeat = (guestId, tableId, seatIdx) => {
   const table = state.tables.find(t => t.id === tableId);
   if (!guest || !table) return;
 
+  // BUG #2: Boundary check
   if (seatIdx < 0 || seatIdx >= table.seats.length) return;
+  
   if (table.seats[seatIdx]) return;
 
   const tables = state.tables.map(t => {
@@ -113,7 +115,9 @@ export const unseatGuest = (tableId, seatIdx) => {
   const table = state.tables.find(t => t.id === tableId);
   if (!table) return;
   
+  // BUG #2: Boundary check
   if (seatIdx < 0 || seatIdx >= table.seats.length) return;
+  
   const guestId = table.seats[seatIdx];
   
   const tables = state.tables.map(t => {

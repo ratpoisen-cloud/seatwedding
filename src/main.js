@@ -94,6 +94,7 @@ const app = {
   renderGuests(search = '') {
     const list = document.getElementById('guests-list');
     list.innerHTML = '';
+    // BUG #5: Use fallback for group
     const filtered = state.guests
       .filter(g => 
         (g.name || '').toLowerCase().includes(search.toLowerCase()) || 
@@ -109,10 +110,12 @@ const app = {
       infoDiv.className = 'guest-info';
       
       const nameH4 = document.createElement('h4');
+      // BUG #4: Prevent XSS
       nameH4.textContent = g.name || 'Без имени';
       infoDiv.appendChild(nameH4);
       
       const p = document.createElement('p');
+      // BUG #4: Prevent XSS
       p.textContent = `${g.group || 'Без группы'} ${g.label ? ` (${g.label})` : ''}`;
       infoDiv.appendChild(p);
       
@@ -238,7 +241,8 @@ const app = {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (state.guests.length > 0 && !confirm('Импорт заменит всех текущих гостей. Продолжить?')) {
+    // BUG #6: Confirmation before clearing
+    if ((state.guests.length > 0 || state.tables.length > 0) && !confirm('Импорт заменит всех текущих гостей и сбросит рассадку. Продолжить?')) {
       e.target.value = '';
       return;
     }

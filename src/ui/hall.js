@@ -39,7 +39,12 @@ const getSVGPoint = (e) => {
 
 const handleMouseDown = (e) => {
   const pt = getSVGPoint(e);
-  if (!pt) return;
+  // BUG #1: Reset if no point
+  if (!pt) {
+    state.draggedTable = null;
+    state.isDragging = false;
+    return;
+  }
   
   // Check for Landmark Drag first
   if (e.target.closest('.landmark')) {
@@ -195,6 +200,7 @@ const createSeat = (table, idx, guestId) => {
     cls += ' occupied';
     const labels = (guest.label || '').toLowerCase();
     if (labels.includes('семья') || labels.includes('родные')) cls += ' tag-family';
+    // BUG #11: Cover "podrugi" etc.
     else if (labels.includes('друг')) cls += ' tag-friends';
     else if (labels.includes('коллег') || labels.includes('работ')) cls += ' tag-work';
     else if (labels.includes('родител')) cls += ' tag-parents';
