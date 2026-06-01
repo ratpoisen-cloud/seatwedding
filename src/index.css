@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-secondary: #f1f5f9;
+  --color-secondary-hover: #e2e8f0;
+  --color-danger: #ef4444;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  --color-bg-main: #f8fafc;
+  --color-bg-card: #ffffff;
+  
+  --font-ui: "Nunito", sans-serif;
+  --font-heading: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    @apply font-ui bg-bg-main text-text-main antialiased overflow-hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
