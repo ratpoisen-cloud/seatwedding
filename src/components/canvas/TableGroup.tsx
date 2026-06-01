@@ -14,7 +14,7 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
   const rectW = 160;
   const rectH = 80;
   const seatRadius = 18;
-  const seatDist = 55;
+  const seatDist = 35; // Closer to table
 
   const count = table.seats.length;
 
@@ -45,8 +45,8 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
 
       {/* Label */}
       <text 
-        className="font-ui text-base font-extrabold fill-text-main text-anchor-middle cursor-pointer pointer-events-auto hover:fill-primary transition-colors"
-        y={6}
+        className="font-ui text-sm font-extrabold fill-text-main text-anchor-middle cursor-pointer pointer-events-auto hover:fill-primary transition-colors"
+        y={4}
         onClick={(e) => {
           e.stopPropagation();
           onEdit();
@@ -74,10 +74,20 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
         }
 
         const guest = guestId ? guests.find(g => g.id === guestId) : null;
-        // In V3, we mapped tags to labels[0] or tag. Let's use labels[0] or group for color.
         const tagColor = guest?.labels?.[0] ? tagColors[guest.labels[0]] : null;
         
         const isHovered = hoveredTarget?.tableId === String(table.id) && hoveredTarget?.seatIdx === idx;
+        
+        const isTop = y < 0;
+        let labelY = y + (isTop ? -20 : 28);
+        
+        // Stagger labels on rect tables to prevent overlap
+        if (table.type === 'rect') {
+          const subIdx = idx % Math.ceil(count / 2);
+          if (subIdx % 2 === 1) {
+            labelY += (isTop ? -14 : 14);
+          }
+        }
         
         return (
           <g key={`${table.id}-seat-${idx}`} className="canvas-seat" data-table-id={table.id} data-seat-idx={idx}>
@@ -95,15 +105,15 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
                 // Handled in Canvas
               }}
             >
-              {guest && <title>{guest.name} ({guest.group})</title>}
+              {guest && <title>{guest.name} ({guest.labels?.[0] || guest.group})</title>}
             </circle>
 
             {guest && (
               <text 
                 x={x} 
-                y={y + (y > 0 ? 32 : -22)} 
+                y={labelY} 
                 className="font-ui text-xs font-bold fill-text-main text-anchor-middle pointer-events-none"
-                transform={`rotate(${-table.rotation}, ${x}, ${y + (y > 0 ? 32 : -22)})`}
+                transform={`rotate(${-table.rotation}, ${x}, ${labelY})`}
               >
                 {guest.name.split(' ')[0]}
               </text>

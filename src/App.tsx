@@ -25,19 +25,48 @@ function App() {
     let initialLoad = true;
     
     const unsubscribe = subscribeToWedding(weddingId, (data) => {
+      if (!data) return;
+
+      const mergedData = { ...data };
+      if (!mergedData.tagColors) mergedData.tagColors = { ...useStore.getState().tagColors };
+      
+      // Dynamic mapping for legacy labels
+      if (mergedData.guests) {
+        mergedData.guests = mergedData.guests.map((g: any) => {
+          if (!g.labels) g.labels = [];
+          
+          let tag = g.labels[0] || g.group || '';
+          
+          if (tag && !mergedData.tagColors[tag]) {
+             const lbl = tag.toLowerCase();
+             if (lbl.includes('семья жениха')) mergedData.tagColors[tag] = '#34d399';
+             else if (lbl.includes('семья невесты')) mergedData.tagColors[tag] = '#059669';
+             else if (lbl.includes('друзья жениха')) mergedData.tagColors[tag] = '#60a5fa';
+             else if (lbl.includes('друзья невесты')) mergedData.tagColors[tag] = '#2563eb';
+             else if (lbl.includes('семья') || lbl.includes('родные')) mergedData.tagColors[tag] = '#10b981';
+             else if (lbl.includes('друг')) mergedData.tagColors[tag] = '#3b82f6';
+             else if (lbl.includes('родител')) mergedData.tagColors[tag] = '#f59e0b';
+             else if (lbl.includes('жених и невеста')) mergedData.tagColors[tag] = '#ec4899';
+             else mergedData.tagColors[tag] = '#94a3b8';
+          }
+
+          if (tag && g.labels.length === 0) {
+            g.labels = [tag];
+          }
+
+          return g;
+        });
+      }
+
       if (initialLoad) {
-        initialize(weddingId, data);
+        initialize(weddingId, mergedData);
         initialLoad = false;
       } else {
-        // If it's a subsequent update, we should ideally merge it carefully
-        // to avoid overwriting local transient state like dragging.
-        // For simplicity in this iteration, we merge it directly if not actively interacting.
-        // A more robust app would use field-level merging or timestamps.
         useStore.setState(state => ({
-           guests: data?.guests || state.guests,
-           tables: data?.tables || state.tables,
-           landmark: data?.landmark || state.landmark,
-           tagColors: data?.tagColors || state.tagColors
+           guests: mergedData.guests || state.guests,
+           tables: mergedData.tables || state.tables,
+           landmark: mergedData.landmark || state.landmark,
+           tagColors: mergedData.tagColors || state.tagColors
         }));
       }
     });
