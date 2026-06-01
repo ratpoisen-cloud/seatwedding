@@ -14,6 +14,8 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const guests = useStore(state => state.guests);
+  const tables = useStore(state => state.tables);
+  const addTable = useStore(state => state.addTable);
   const tagColors = useStore(state => state.tagColors);
   const { openModal } = useModalStore();
   const [activeTab, setActiveTab] = useState<'guests' | 'tables'>('guests');
@@ -143,10 +145,37 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         ) : (
           <div className="flex flex-col h-full p-4 gap-4">
-             {/* We will add table logic in the next step */}
-             <div className="text-center py-8 text-text-muted text-sm">
-                  Управление столами будет добавлено далее.
-             </div>
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="secondary" onClick={() => addTable('round')}>⚪ Круглый</Button>
+              <Button className="flex-1" variant="secondary" onClick={() => addTable('rect')}>▭ Прямоуг.</Button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              {tables.map(table => {
+                const seatedCount = table.seats.filter(s => s).length;
+                return (
+                  <div key={table.id} className="group flex items-center justify-between p-3 rounded-xl border border-border bg-bg-card hover:border-primary/50 hover:shadow-sm transition-all">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm text-text-main">{table.name}</span>
+                      <span className="text-[11px] text-text-muted">
+                        {table.type === 'round' ? 'Круглый' : 'Прямоугольный'} • {seatedCount}/{table.seats.length} занято
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => openModal('table', { id: table.id })}
+                      className="p-2 text-text-muted hover:text-primary transition-colors focus:outline-none"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </div>
+                )
+              })}
+              {tables.length === 0 && (
+                <div className="text-center py-8 text-text-muted text-sm">
+                  Нет добавленных столов
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
