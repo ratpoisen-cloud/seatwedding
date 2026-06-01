@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useStore } from './store';
 import { subscribeToWedding } from './firebase';
 import { Header } from './components/Header';
@@ -8,9 +8,14 @@ import { TagsModal } from './components/modals/TagsModal';
 import { SeatActionModal } from './components/modals/SeatActionModal';
 import { Canvas } from './components/canvas/Canvas';
 import { Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { toPng } from 'html-to-image';
 
 function App() {
-  const { initialize, isSyncing } = useStore();
+  const initialize = useStore(state => state.initialize);
+  const isSyncing = useStore(state => state.isSyncing);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -40,12 +45,60 @@ function App() {
     return () => unsubscribe();
   }, [initialize]);
 
+  const exportExcel = () => {
+    const { guests, tables } = useStore.getState();
+    const data = guests.map(g => {
+      const table = tables.find(t => t.seats.includes(g.id));
+      let seatNum = table ? table.seats.indexOf(g.id) + 1 : '';
+      return {
+        'Имя': g.name,
+        'Группа/Тег': g.labels[0] || g.group || '',
+        'Статус': g.status + (g.isQuestion ? ' (Под вопросом)' : ''),
+        'Стол': table ? table.name : 'Не рассажен',
+        'Место': seatNum
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Рассадка");
+    XLSX.writeFile(wb, "Wedding_Seating_Plan.xlsx");
+  };
+
+  const takeScreenshot = async () => {
+    if (!canvasWrapperRef.current) return;
+    
+    // Add print mode class to hide UI overlays during screenshot
+    document.body.classList.add('print-mode');
+    
+    try {
+      const dataUrl = await toPng(canvasWrapperRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#e2e8f0', // match canvas-area
+      });
+      
+      const link = document.createElement('a');
+      link.download = 'wedding-seating-plan.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Screenshot failed', err);
+      alert('Не удалось сделать скриншот');
+    } finally {
+      document.body.classList.remove('print-mode');
+    }
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden">
-      <Header />
-      <div className="flex flex-1 h-[calc(100vh-72px)] overflow-hidden absolute top-[72px] inset-x-0 bottom-0">
-        <Sidebar />
-        <main className="flex-1 relative bg-slate-200">
+    <div className="flex flex-col h-screen w-screen overflow-hidden">
+      <Header 
+        onToggleMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+        onExport={exportExcel}
+        onScreenshot={takeScreenshot}
+      />
+      <div className="flex flex-1 h-[calc(100vh-72px)] overflow-hidden relative">
+        <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+        <main className="flex-1 relative bg-slate-200" ref={canvasWrapperRef}>
            <Canvas />
         </main>
       </div>

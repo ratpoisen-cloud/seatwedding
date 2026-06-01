@@ -7,8 +7,14 @@ import { Input } from './ui/Input';
 import { User, Tag, Plus, Edit2, Search, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 import { cn } from '../utils';
 
-export function Sidebar() {
-  const { guests, tagColors } = useStore();
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const guests = useStore(state => state.guests);
+  const tagColors = useStore(state => state.tagColors);
   const { openModal } = useModalStore();
   const [activeTab, setActiveTab] = useState<'guests' | 'tables'>('guests');
   const [search, setSearch] = useState('');
@@ -23,10 +29,27 @@ export function Sidebar() {
   const handleDragStart = (e: React.DragEvent, guestId: string) => {
     e.dataTransfer.setData('guestId', guestId);
     e.dataTransfer.effectAllowed = 'copyMove';
+    // Close sidebar on mobile when dragging starts
+    if (window.innerWidth <= 1024) {
+      onClose();
+    }
   };
 
   return (
-    <aside className="w-96 flex flex-col bg-bg-card border-r border-border h-full shadow-lg z-10 hidden lg:flex">
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 z-20 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      <aside className={cn(
+        "w-96 max-w-[85vw] flex flex-col bg-bg-card border-r border-border h-full shadow-lg z-30 absolute lg:static top-0 left-0 transition-transform duration-300 ease-in-out lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+
       
       {/* Tabs */}
       <div className="flex border-b border-border">
@@ -128,5 +151,6 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }
