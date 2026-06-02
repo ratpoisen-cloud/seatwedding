@@ -132,7 +132,7 @@ export function Canvas() {
     }
 
     if (guestId) openModal('seatAction', { guestId, tableId, seatIdx });
-    else openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
+    else openModal('seatAction', { tableId, seatIdx, mode: 'pickGuest' });
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {

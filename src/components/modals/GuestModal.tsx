@@ -8,7 +8,7 @@ import { Button } from '../ui/Button';
 
 export function GuestModal() {
   const { payload, closeModal } = useModalStore();
-  const { guests, tagColors, addGuest, updateGuest, deleteGuest } = useStore();
+  const { guests, tagColors, addGuest, updateGuest, deleteGuest, assignSeat } = useStore();
   
   const [name, setName] = useState('');
   const [tag, setTag] = useState('');
@@ -43,7 +43,10 @@ export function GuestModal() {
     if (isEdit) {
       updateGuest(payload.id, data);
     } else {
-      addGuest({ ...data, seated: false });
+      const newId = addGuest({ ...data, seated: false });
+      if (payload?.targetTableId && payload?.targetSeatIdx !== undefined) {
+        assignSeat(newId, payload.targetTableId, payload.targetSeatIdx);
+      }
     }
     closeModal();
   };

@@ -45,7 +45,7 @@ export interface AppState {
   setError: (error: string | null) => void;
   
   // Data Mutations
-  addGuest: (guest: Omit<Guest, 'id'>) => void;
+  addGuest: (guest: Omit<Guest, 'id'>) => string;
   updateGuest: (id: string, data: Partial<Guest>) => void;
   deleteGuest: (id: string) => void;
   
@@ -123,9 +123,11 @@ export const useStore = create<AppState>((set, get) => ({
 
   // --- Guests ---
   addGuest: (guestData) => {
-    const newGuest = { ...guestData, id: crypto.randomUUID() };
+    const id = crypto.randomUUID();
+    const newGuest = { ...guestData, id };
     set(state => ({ guests: [...state.guests, newGuest] }));
     get()._sync();
+    return id;
   },
   
   updateGuest: (id, data) => {
