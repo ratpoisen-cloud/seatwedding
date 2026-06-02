@@ -247,9 +247,9 @@ export function Canvas() {
           </filter>
           <filter id="gold-tint" x="-10%" y="-10%" width="120%" height="120%">
             <feColorMatrix type="matrix" in="SourceGraphic" values="
-              0.4 0.3 0   0   0.35
-              0.3 0.4 0.1 0   0.15
-              0.1 0.2 0.4 0   0.05
+              0.3 0.3 0   0   0.78
+              0.2 0.3 0.1 0   0.63
+              0   0.2 0.2 0   0.36
               0   0   0   1   0
             " />
           </filter>

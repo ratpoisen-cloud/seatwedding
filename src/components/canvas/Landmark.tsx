@@ -28,7 +28,7 @@ export function Landmark({ data }: { data: LandmarkType }) {
         height={h}
         preserveAspectRatio="xMidYMid meet"
         className="pointer-events-none rounded-lg"
-        style={{ opacity: 0.9 }}
+        filter="url(#gold-tint)"
       />
     </g>
   );
