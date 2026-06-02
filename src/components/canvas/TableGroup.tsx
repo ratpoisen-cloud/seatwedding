@@ -161,9 +161,17 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
         let labelX: number, labelY: number;
 
         if (table.type === 'round') {
-          const labelDist = dist + labelGap;
-          labelX = Math.cos(angle) * labelDist;
-          labelY = Math.sin(angle) * labelDist;
+          const lx = x;
+          const ly = y - labelGap;
+          const minR = roundRadius + seatDist + 10;
+          if (Math.hypot(lx, ly) < minR) {
+            const theta = Math.atan2(ly, lx);
+            labelX = minR * Math.cos(theta);
+            labelY = minR * Math.sin(theta);
+          } else {
+            labelX = lx;
+            labelY = ly;
+          }
         } else if (table.seatLayout === 'stadium') {
           switch (section) {
             case 'top':
