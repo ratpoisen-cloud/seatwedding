@@ -133,7 +133,7 @@ function App() {
       />
       <div className="flex flex-1 h-[calc(100vh-72px)] overflow-hidden relative">
         <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-        <main className="flex-1 relative bg-slate-200" ref={canvasWrapperRef}>
+        <main className="flex-1 relative bg-white" ref={canvasWrapperRef}>
            <Canvas />
         </main>
       </div>
@@ -145,7 +145,7 @@ function App() {
       
       {/* Global Sync Indicator */}
       {isSyncing && (
-        <div className="fixed bottom-4 right-4 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg z-50 print-mode-hide">
+        <div className="fixed bottom-4 right-4 bg-[#283618]/90 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg z-50 print-mode-hide">
           <Loader2 size={16} className="animate-spin" />
           Синхронизация...
         </div>

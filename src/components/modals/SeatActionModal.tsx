@@ -40,7 +40,7 @@ export function SeatActionModal() {
           Кого посадить на место <strong>{guest.name}</strong>?
         </p>
 
-        <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2 max-h-64 overflow-y-auto">
           {unseatedGuests.length === 0 ? (
             <p className="text-sm text-text-muted text-center py-8">Нет свободных гостей</p>
           ) : (
@@ -51,7 +51,7 @@ export function SeatActionModal() {
                 <button
                   key={g.id}
                   onClick={() => handleReplaceWith(g.id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-primary/50 hover:shadow-sm transition-all text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:border-primary/50 hover:shadow-sm transition-all text-left cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}20`, color }}>
                     <User size={16} />

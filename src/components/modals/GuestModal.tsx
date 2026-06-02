@@ -66,7 +66,7 @@ export function GuestModal() {
         <div>
           <label className="block text-sm font-bold text-text-muted mb-1">Группа / Тег</label>
           <select 
-            className="flex h-11 w-full rounded-xl border border-border bg-bg-main px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="flex h-11 w-full rounded-xl border border-border bg-white px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             value={tag}
             onChange={e => setTag(e.target.value)}
           >
@@ -80,7 +80,7 @@ export function GuestModal() {
         <div>
           <label className="block text-sm font-bold text-text-muted mb-1">Статус</label>
           <select 
-            className="flex h-11 w-full rounded-xl border border-border bg-bg-main px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="flex h-11 w-full rounded-xl border border-border bg-white px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             value={status}
             onChange={e => setStatus(e.target.value as GuestStatus)}
           >

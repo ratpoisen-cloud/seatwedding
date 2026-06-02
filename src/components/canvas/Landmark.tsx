@@ -2,17 +2,34 @@
 import { type Landmark as LandmarkType } from '../../store';
 
 export function Landmark({ data }: { data: LandmarkType }) {
+  const w = 140;
+  const h = 200;
   return (
-    <g 
-      className="canvas-landmark cursor-grab active:cursor-grabbing" 
+    <g
+      className="canvas-landmark cursor-grab active:cursor-grabbing"
       transform={`translate(${data.x}, ${data.y})`}
     >
-      {/* Soft shadow handled by CSS filter or SVG filter in Canvas */}
-      <path d="M-60,0 C-60,-50 60,-50 60,0 Z" fill="#ef4444" stroke="#991b1b" strokeWidth="2" filter="url(#soft-shadow)"/>
-      <circle cx="-25" cy="-20" r="10" fill="white"/>
-      <circle cx="25" cy="-15" r="14" fill="white"/>
-      <circle cx="0" cy="-35" r="8" fill="white"/>
-      <rect x="-15" y="0" width="30" height="50" rx="6" fill="#fef3c7" stroke="#b45309" strokeWidth="2"/>
+      <rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        fill="transparent"
+        stroke="none"
+        pointerEvents="all"
+        className="canvas-landmark"
+      />
+      <image
+        href={`${import.meta.env.BASE_URL}yggdrasil-lg.png`}
+        xlinkHref={`${import.meta.env.BASE_URL}yggdrasil-lg.png`}
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        preserveAspectRatio="xMidYMid meet"
+        className="pointer-events-none rounded-lg"
+        style={{ opacity: 0.9 }}
+      />
     </g>
   );
 }

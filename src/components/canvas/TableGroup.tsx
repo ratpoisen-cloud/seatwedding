@@ -53,13 +53,13 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
     >
       {table.type === 'round' ? (
         <circle
-          className="fill-bg-card stroke-border stroke-[3px] hover:stroke-slate-400 transition-colors"
+          className="fill-secondary stroke-primary/50 stroke-[3px] hover:stroke-primary transition-colors"
           r={roundRadius}
           filter="url(#soft-shadow)"
         />
       ) : (
         <rect
-          className="fill-bg-card stroke-border stroke-[3px] hover:stroke-slate-400 transition-colors"
+          className="fill-secondary stroke-primary/50 stroke-[3px] hover:stroke-primary transition-colors"
           width={rectW}
           height={rectH}
           x={-rectW / 2}
@@ -75,8 +75,8 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
         dy=".35em"
         textAnchor="middle"
         fontSize={nameFontSize}
-        fill="#0f172a"
-        className="font-ui font-extrabold cursor-pointer pointer-events-auto hover:fill-[#6366f1] transition-colors"
+        fill="#283618"
+        className="font-ui font-extrabold cursor-pointer pointer-events-auto hover:fill-primary transition-colors"
         transform={`rotate(${-table.rotation}, 0, 0)`}
         onPointerDown={e => {
           e.stopPropagation();
@@ -93,8 +93,8 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
           updateTable(table.id, { rotation: ((table.rotation || 0) + 45) % 360 });
         }}
       >
-        <circle cx={rotateBtn.x} cy={rotateBtn.y} r={14} fill="white" stroke="#cbd5e1" strokeWidth={2} className="hover:stroke-primary transition-colors" />
-        <text x={rotateBtn.x} y={rotateBtn.y + 5} textAnchor="middle" className="fill-slate-500 text-base pointer-events-none select-none">↻</text>
+        <circle cx={rotateBtn.x} cy={rotateBtn.y} r={14} fill="#fefae0" stroke="#C9A25B" strokeWidth={2} className="hover:stroke-primary hover:fill-primary/10 transition-colors" />
+        <text x={rotateBtn.x} y={rotateBtn.y + 5} textAnchor="middle" className="fill-text-muted text-base pointer-events-none select-none">↻</text>
       </g>
 
       {table.seats.map((guestId, idx) => {
@@ -130,11 +130,11 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
         }
 
         const seatFill = isSelected
-          ? '#6366f1'
-          : (tagColor || (guest ? '#6366f1' : '#f1f5f9'));
+          ? '#283618'
+          : (tagColor || (guest ? '#C9A25B' : '#fefae0'));
         const seatStroke = isSelected
-          ? '#4f46e5'
-          : (tagColor || (guest ? '#4f46e5' : '#cbd5e1'));
+          ? '#1a2610'
+          : (tagColor || (guest ? '#B8924A' : '#606c38'));
         const seatStrokeWidth = isSelected ? 4 : undefined;
 
         const tooltipText = guest
@@ -167,7 +167,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
                 x={x}
                 y={labelY}
                 textAnchor="middle"
-                fill="#0f172a"
+                fill="#283618"
                 className="font-ui text-xs font-bold pointer-events-none"
                 transform={`rotate(${-table.rotation}, ${x}, ${labelY})`}
               >

@@ -240,10 +240,18 @@ export function Canvas() {
       >
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1.5" fill="#cbd5e1" />
+            <circle cx="2" cy="2" r="1.5" fill="#C9A25B" opacity="0.3" />
           </pattern>
           <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#cbd5e1" floodOpacity="0.5" />
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#C9A25B" floodOpacity="0.35" />
+          </filter>
+          <filter id="gold-tint" x="-10%" y="-10%" width="120%" height="120%">
+            <feColorMatrix type="matrix" in="SourceGraphic" values="
+              0.4 0.3 0   0   0.35
+              0.3 0.4 0.1 0   0.15
+              0.1 0.2 0.4 0   0.05
+              0   0   0   1   0
+            " />
           </filter>
         </defs>
 
@@ -263,10 +271,10 @@ export function Canvas() {
         </g>
       </svg>
 
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 bg-white p-2 rounded-2xl shadow-lg border border-slate-200 print-mode-hide">
-        <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">+</button>
-        <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700">100%</button>
-        <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">-</button>
+      <div className="absolute bottom-6 right-6 flex flex-col gap-1.5 bg-secondary p-1.5 rounded-2xl shadow-[var(--shadow-card)] border border-primary/20 print-mode-hide">
+        <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl font-bold text-text-main hover:text-primary transition-colors">+</button>
+        <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl text-[10px] font-bold text-text-main hover:text-primary transition-colors">100%</button>
+        <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl font-bold text-text-main hover:text-primary transition-colors">-</button>
       </div>
     </div>
   );
