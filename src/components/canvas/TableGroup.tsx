@@ -35,7 +35,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
   const rectW = 160;
   const rectH = 80;
   const seatRadius = 18;
-  const seatDist = 35;
+  const seatDist = 24;
 
   const count = table.seats.length;
 
@@ -101,13 +101,48 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
       {table.seats.map((guestId, idx) => {
         let x = 0, y = 0;
         let dist = 0;
+        let section: 'top' | 'right' | 'bottom' | 'left' = 'top';
+        let angle = 0;
 
         if (table.type === 'round') {
-          const angle = (idx / count) * Math.PI * 2;
+          angle = (idx / count) * Math.PI * 2;
           dist = roundRadius + seatDist;
           x = Math.cos(angle) * dist;
           y = Math.sin(angle) * dist;
+        } else if (table.seatLayout === 'stadium') {
+          const a = rectW / 2;
+          const b = rectH / 2;
+          const endX = a - b;
+          const R = b + seatDist;
+          const straightLen = 2 * endX;
+          const semicircleLen = Math.PI * R;
+          const totalLen = 2 * straightLen + 2 * semicircleLen;
+          const pos = (idx / count) * totalLen;
+
+          if (pos < straightLen) {
+            section = 'top';
+            x = -endX + (pos / straightLen) * (2 * endX);
+            y = -R;
+          } else if (pos < straightLen + semicircleLen) {
+            section = 'right';
+            const frac = (pos - straightLen) / semicircleLen;
+            angle = -Math.PI / 2 + frac * Math.PI;
+            x = endX + Math.cos(angle) * R;
+            y = Math.sin(angle) * R;
+          } else if (pos < straightLen + semicircleLen + straightLen) {
+            section = 'bottom';
+            const frac = (pos - straightLen - semicircleLen) / straightLen;
+            x = endX - frac * (2 * endX);
+            y = R;
+          } else {
+            section = 'left';
+            const frac = (pos - straightLen - semicircleLen - straightLen) / semicircleLen;
+            angle = Math.PI / 2 + frac * Math.PI;
+            x = -endX + Math.cos(angle) * R;
+            y = Math.sin(angle) * R;
+          }
         } else {
+          // rows layout (variant 1) — original two straight rows
           const perSide = Math.ceil(count / 2);
           const side = idx < perSide ? -1 : 1;
           const subIdx = idx % perSide;
@@ -122,16 +157,32 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
         const isSelected = guestId && selectedGuestId === guestId;
         const isDropHover = dropHover?.tableId === table.id && dropHover.seatIdx === idx;
 
-        const isTop = y < 0;
-        let labelX = x;
-        let labelY: number;
+        const labelGap = 28;
+        let labelX: number, labelY: number;
 
         if (table.type === 'round') {
-          const angle = (idx / count) * Math.PI * 2;
-          const labelDist = dist + 32;
+          const labelDist = dist + labelGap;
           labelX = Math.cos(angle) * labelDist;
           labelY = Math.sin(angle) * labelDist;
+        } else if (table.seatLayout === 'stadium') {
+          switch (section) {
+            case 'top':
+              labelX = x;
+              labelY = y - labelGap;
+              break;
+            case 'bottom':
+              labelX = x;
+              labelY = y + labelGap;
+              break;
+            case 'right':
+            case 'left':
+              labelX = x + Math.cos(angle) * labelGap;
+              labelY = y + Math.sin(angle) * labelGap;
+              break;
+          }
         } else {
+          const isTop = y < 0;
+          labelX = x;
           labelY = y + (isTop ? -26 : 34);
           const subIdx = idx % Math.ceil(count / 2);
           if (subIdx % 2 === 1) {

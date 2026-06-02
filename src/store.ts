@@ -21,6 +21,7 @@ export interface Table {
   y: number;
   rotation: number;
   seats: (string | null)[];
+  seatLayout?: 'rows' | 'stadium';
 }
 
 export interface Landmark {
@@ -88,6 +89,7 @@ export const useStore = create<AppState>((set, get) => ({
     tables: (data?.tables || []).map((t: Table) => ({
       ...t,
       rotation: Math.round((t.rotation || 0) / 90) * 90 % 360,
+      seatLayout: t.seatLayout || 'rows',
     })),
     landmark: data?.landmark || { x: 800, y: 500 },
     tagColors: data?.tagColors || { ...defaultTags },
@@ -155,7 +157,8 @@ export const useStore = create<AppState>((set, get) => ({
       name: `Стол ${get().tables.length + 1}`,
       type,
       x: 400, y: 400, rotation: 0,
-      seats: Array(type === 'round' ? 8 : 10).fill(null)
+      seats: Array(type === 'round' ? 8 : 10).fill(null),
+      seatLayout: 'rows'
     };
     set(state => ({ tables: [...state.tables, newTable] }));
     get()._sync();

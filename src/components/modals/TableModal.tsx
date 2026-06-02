@@ -14,12 +14,18 @@ export function TableModal() {
   const [name, setName] = useState(table?.name || '');
   const [tableType, setTableType] = useState<'round' | 'rect'>(table?.type || 'round');
   const [seatCount, setSeatCount] = useState(table?.seats.length || 8);
+  const [seatLayout, setSeatLayout] = useState<'rows' | 'stadium'>(table?.seatLayout || 'rows');
 
   const handleSave = () => {
     if (!table || !name.trim()) return;
 
     const newSeats = Array(seatCount).fill(null).map((_, i) => table.seats[i] ?? null);
-    updateTable(table.id, { name: name.trim(), type: tableType, seats: newSeats });
+    updateTable(table.id, {
+      name: name.trim(),
+      type: tableType,
+      seats: newSeats,
+      seatLayout: tableType === 'rect' ? seatLayout : undefined,
+    });
     closeModal();
   };
 
@@ -82,6 +88,38 @@ export function TableModal() {
             </button>
           </div>
         </div>
+
+        {tableType === 'rect' && (
+          <div>
+            <label className="block text-sm font-bold text-text-muted mb-1">Рассадка</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSeatLayout('rows')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
+                  seatLayout === 'rows'
+                    ? "border-accent bg-accent/5 text-accent"
+                    : "border-border bg-white text-text-muted hover:border-accent/30"
+                )}
+              >
+                <span className="text-lg">≡</span> Рядами
+              </button>
+              <button
+                type="button"
+                onClick={() => setSeatLayout('stadium')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
+                  seatLayout === 'stadium'
+                    ? "border-accent bg-accent/5 text-accent"
+                    : "border-border bg-white text-text-muted hover:border-accent/30"
+                )}
+              >
+                <span className="text-lg">⌔</span> По периметру
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between items-center mt-8">
