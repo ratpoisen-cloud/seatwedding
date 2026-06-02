@@ -13,12 +13,12 @@ export function Header({ onToggleMenu, onExport, onScreenshot }: HeaderProps) {
   const { openModal } = useModalStore();
 
   return (
-    <header className="h-[72px] bg-secondary border-b-2 border-primary/30 flex items-center justify-between px-6 z-20">
+    <header className="h-[72px] bg-secondary border-b border-accent/20 flex items-center justify-between px-6 z-20">
       <div className="flex items-center gap-4">
-        <button onClick={onToggleMenu} className="lg:hidden p-2 text-text-muted hover:bg-primary/10 rounded-xl transition-colors">
+        <button onClick={onToggleMenu} className="lg:hidden p-2 text-text-muted hover:bg-accent/10 rounded-xl transition-colors">
           <Menu size={24} />
         </button>
-        <h1 className="font-heading text-2xl font-bold text-primary tracking-tight">SeatWedding</h1>
+        <h1 className="font-heading text-2xl font-bold text-accent tracking-tight">SeatWedding</h1>
       </div>
 
       <div className="flex items-center gap-3">

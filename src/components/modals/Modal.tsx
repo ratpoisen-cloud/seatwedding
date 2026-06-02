@@ -30,13 +30,13 @@ export function Modal({ id, title, children }: ModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-secondary rounded-2xl shadow-[var(--shadow-card)] border border-primary/20 overflow-hidden pointer-events-auto"
+              className="w-full max-w-md bg-secondary rounded-2xl shadow-[var(--shadow-card)] border border-accent/20 overflow-hidden pointer-events-auto"
             >
-              <div className="flex items-center justify-between p-6 border-b border-primary/20">
+              <div className="flex items-center justify-between p-6 border-b border-accent/15">
                 <h2 className="text-xl font-heading font-bold text-text-main">{title}</h2>
                 <button
                   onClick={closeModal}
-                  className="p-2 -mr-2 rounded-full hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
+                  className="p-2 -mr-2 rounded-full hover:bg-accent/10 text-text-muted hover:text-accent transition-colors"
                 >
                   <X size={20} />
                 </button>

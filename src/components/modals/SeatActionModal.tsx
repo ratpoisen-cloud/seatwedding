@@ -51,7 +51,7 @@ export function SeatActionModal() {
                 <button
                   key={g.id}
                   onClick={() => handleReplaceWith(g.id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:border-primary/50 hover:shadow-sm transition-all text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-white hover:border-accent/40 hover:shadow-sm transition-all text-left cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}20`, color }}>
                     <User size={16} />
@@ -60,7 +60,7 @@ export function SeatActionModal() {
                     <span className="font-bold text-sm text-text-main block truncate">{g.name}</span>
                     {tag && <span className="text-[11px] text-text-muted">{tag}</span>}
                   </div>
-                  <Check size={18} className="text-primary shrink-0" />
+                  <Check size={18} className="text-accent shrink-0" />
                 </button>
               );
             })

@@ -53,13 +53,13 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
     >
       {table.type === 'round' ? (
         <circle
-          className="fill-secondary stroke-primary/50 stroke-[3px] hover:stroke-primary transition-colors"
+          className="fill-secondary stroke-accent/30 stroke-[2px] hover:stroke-accent transition-colors"
           r={roundRadius}
           filter="url(#soft-shadow)"
         />
       ) : (
         <rect
-          className="fill-secondary stroke-primary/50 stroke-[3px] hover:stroke-primary transition-colors"
+          className="fill-secondary stroke-accent/30 stroke-[2px] hover:stroke-accent transition-colors"
           width={rectW}
           height={rectH}
           x={-rectW / 2}
@@ -76,7 +76,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
         textAnchor="middle"
         fontSize={nameFontSize}
         fill="#283618"
-        className="font-ui font-extrabold cursor-pointer pointer-events-auto hover:fill-primary transition-colors"
+        className="font-ui font-extrabold cursor-pointer pointer-events-auto hover:fill-accent transition-colors"
         transform={`rotate(${-table.rotation}, 0, 0)`}
         onPointerDown={e => {
           e.stopPropagation();
@@ -93,7 +93,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
           updateTable(table.id, { rotation: ((table.rotation || 0) + 45) % 360 });
         }}
       >
-        <circle cx={rotateBtn.x} cy={rotateBtn.y} r={14} fill="#fefae0" stroke="#C9A25B" strokeWidth={2} className="hover:stroke-primary hover:fill-primary/10 transition-colors" />
+        <circle cx={rotateBtn.x} cy={rotateBtn.y} r={14} fill="#fefae0" stroke="#C9A25B" strokeWidth={2} className="hover:stroke-accent hover:fill-accent/10 transition-colors" />
         <text x={rotateBtn.x} y={rotateBtn.y + 5} textAnchor="middle" className="fill-text-muted text-base pointer-events-none select-none">↻</text>
       </g>
 

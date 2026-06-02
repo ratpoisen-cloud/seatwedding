@@ -63,7 +63,7 @@ export function TagsModal() {
           placeholder="Новая группа..." 
           value={newTagName}
           onChange={e => setNewTagName(e.target.value)}
-          className="flex-1 h-11 rounded-xl border border-border bg-white px-4 text-sm focus:outline-none focus:border-primary"
+          className="flex-1 h-11 rounded-xl border border-border bg-white px-4 text-sm focus:outline-none focus:border-accent"
         />
         <Button onClick={handleAddTag}>Добавить</Button>
       </div>

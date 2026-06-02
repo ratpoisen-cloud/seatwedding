@@ -49,7 +49,7 @@ export function TableModal() {
             max={20}
             value={seatCount}
             onChange={e => setSeatCount(Math.max(2, Math.min(20, parseInt(e.target.value) || 2)))}
-            className="flex h-11 w-full rounded-xl border border-border bg-white px-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="flex h-11 w-full rounded-xl border border-border bg-white px-4 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
 
@@ -62,8 +62,8 @@ export function TableModal() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
                 tableType === 'round'
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border bg-white text-text-muted hover:border-primary/40"
+                  ? "border-accent bg-accent/5 text-accent"
+                  : "border-border bg-white text-text-muted hover:border-accent/30"
               )}
             >
               <span className="text-lg">⚪</span> Круглый
@@ -74,8 +74,8 @@ export function TableModal() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
                 tableType === 'rect'
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border bg-white text-text-muted hover:border-primary/40"
+                  ? "border-accent bg-accent/5 text-accent"
+                  : "border-border bg-white text-text-muted hover:border-accent/30"
               )}
             >
               <span className="text-lg">▭</span> Прямоуг.

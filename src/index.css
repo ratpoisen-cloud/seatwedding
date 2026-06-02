@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #C9A25B;
-  --color-primary-hover: #B8924A;
+  --color-primary: #606c38;
+  --color-primary-hover: #4a5530;
+  --color-accent: #C9A25B;
+  --color-accent-hover: #B8924A;
   --color-secondary: #fefae0;
   --color-secondary-hover: #f5f0d0;
   --color-danger: #B08A8A;
@@ -16,8 +18,8 @@
   --font-ui: "Nunito", sans-serif;
   --font-heading: "Playfair Display", serif;
 
-  --shadow-card: 0 0 15px rgba(201, 162, 91, 0.2), 0 5px 20px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 15px rgba(201, 162, 91, 0.3), 0 5px 20px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 0 15px rgba(201, 162, 91, 0.15), 0 5px 20px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 0 15px rgba(96, 108, 56, 0.2), 0 5px 20px rgba(0, 0, 0, 0.08);
   --radius-card: 16px;
   --radius-pill: 50px;
 }
@@ -35,11 +37,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #C9A25B40;
+    background: color-mix(in srgb, #C9A25B 25%, transparent);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #C9A25B80;
+    background: color-mix(in srgb, #C9A25B 50%, transparent);
   }
 }
 

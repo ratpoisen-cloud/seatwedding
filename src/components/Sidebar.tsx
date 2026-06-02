@@ -47,14 +47,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <aside className={cn(
-        "w-96 max-w-[85vw] flex flex-col bg-secondary border-r-2 border-primary/30 h-full shadow-[var(--shadow-card)] z-30 absolute lg:static top-0 left-0 transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "w-96 max-w-[85vw] flex flex-col bg-secondary border-r border-accent/15 h-full shadow-[var(--shadow-card)] z-30 absolute lg:static top-0 left-0 transition-transform duration-300 ease-in-out lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
 
         <div className="flex-1 overflow-hidden flex flex-col p-5 gap-4">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-xl font-bold text-text-main">Гости</h2>
-            <span className="text-xs text-text-muted font-semibold px-3 py-1 rounded-full border border-primary/20 bg-white">
+            <span className="text-xs text-text-muted font-semibold px-3 py-1 rounded-full border border-accent/20 bg-white">
               {guests.filter(g => !g.seated).length} / {guests.length}
             </span>
           </div>
@@ -87,15 +87,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     "group flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
                     g.seated
                       ? "border-dashed border-text-muted/30 bg-white/60 opacity-60 hover:opacity-80"
-                      : "border-transparent bg-white hover:border-primary/40 hover:shadow-[var(--shadow-card)]",
-                    g.isQuestion && "border-amber-300/60",
-                    isSelected && "!border-primary !bg-white shadow-[var(--shadow-glow)]"
+                      : "border-transparent bg-white hover:border-accent/30 hover:shadow-[var(--shadow-card)]",
+                      g.isQuestion && "border-amber-300/60",
+                      isSelected && "!border-primary !bg-white shadow-[var(--shadow-glow)]"
                   )}
                 >
                   <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <div className={cn(
                       "w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm",
-                      isSelected ? "bg-primary text-white" : "bg-primary/10 text-text-muted"
+                      isSelected ? "bg-primary text-white" : "bg-accent/10 text-text-muted"
                     )}>
                       {g.name.charAt(0).toUpperCase()}
                     </div>
@@ -128,7 +128,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       e.stopPropagation();
                       openModal('guest', { id: g.id });
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-2 text-text-muted hover:text-primary transition-all focus:outline-none shrink-0"
+                    className="opacity-0 group-hover:opacity-100 p-2 text-text-muted hover:text-accent transition-all focus:outline-none shrink-0"
                   >
                     <Edit2 size={16} />
                   </button>
