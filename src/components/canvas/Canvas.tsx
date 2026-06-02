@@ -119,6 +119,36 @@ export function Canvas() {
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const guestId = e.dataTransfer.getData('text/plain');
+    if (!guestId) return;
+
+    const elements = document.elementsFromPoint(e.clientX, e.clientY);
+    for (const el of elements) {
+      let cur: Element | null = el;
+      while (cur) {
+        const cls = cur.getAttribute('class');
+        if (cls && cls.split(/\s+/).includes('canvas-seat')) {
+          const targetTableId = cur.getAttribute('data-table-id');
+          const seatIdxAttr = cur.getAttribute('data-seat-idx');
+          if (!targetTableId || seatIdxAttr === null) return;
+          const targetSeatIdx = parseInt(seatIdxAttr);
+
+          const { tables: freshTables } = useStore.getState();
+          const table = freshTables.find(t => t.id === targetTableId);
+          if (!table) return;
+
+          const occupantId = table.seats[targetSeatIdx];
+          if (occupantId) swapSeats(guestId, targetTableId, targetSeatIdx);
+          else assignSeat(guestId, targetTableId, targetSeatIdx);
+          return;
+        }
+        cur = cur.parentElement;
+      }
+    }
+  };
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
@@ -228,7 +258,11 @@ export function Canvas() {
   };
 
   return (
-    <div className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : ''}`}>
+    <div
+      className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-default'}`}
+      onDragOver={(e) => { e.preventDefault(); }}
+      onDrop={handleDrop}
+    >
       <svg
         ref={svgRef}
         className="w-full h-full touch-none"

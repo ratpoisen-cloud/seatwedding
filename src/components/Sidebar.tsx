@@ -82,9 +82,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               return (
                 <div
                   key={g.id}
+                  draggable="true"
                   onClick={() => handleGuestClick(g.id)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', g.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
                   className={cn(
-                    "group flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
+                    "group flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-grab active:cursor-grabbing",
                     g.seated
                       ? "border-dashed border-text-muted/30 bg-white/60 opacity-60 hover:opacity-80"
                       : "border-transparent bg-white hover:border-accent/30 hover:shadow-[var(--shadow-card)]",
