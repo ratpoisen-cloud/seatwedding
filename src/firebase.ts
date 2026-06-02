@@ -14,12 +14,18 @@ export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 export const subscribeToWedding = (weddingId: string, callback: (data: any) => void) => {
+  let initialSnapshot = true;
+
   return onSnapshot(doc(db, "weddings", weddingId), (snapshot) => {
+    if (snapshot.metadata.hasPendingWrites && !initialSnapshot) return;
+
     if (snapshot.exists()) {
       callback(snapshot.data());
     } else {
       callback(null);
     }
+
+    initialSnapshot = false;
   }, (error) => {
     console.error("Firebase sync error:", error);
   });

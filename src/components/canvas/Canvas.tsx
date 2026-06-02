@@ -21,9 +21,9 @@ export function Canvas() {
   // Interaction tracking
   const dragInfo = useRef<{
     type: 'pan' | 'landmark' | 'table' | 'guest' | null;
-    id?: string | number;
+    id?: string;
     guestId?: string;
-    tableId?: string | number;
+    tableId?: string;
     seatIdx?: number;
     startX: number;
     startY: number;
@@ -32,7 +32,7 @@ export function Canvas() {
   }>({ type: null, startX: 0, startY: 0 });
 
   const [draggedGuestId, setDraggedGuestId] = useState<string | null>(null);
-  const [hoveredTarget, setHoveredTarget] = useState<{tableId: string | number, seatIdx: number} | null>(null);
+  const [hoveredTarget, setHoveredTarget] = useState<{tableId: string, seatIdx: number} | null>(null);
   
   const ghostRef = useRef<HTMLDivElement>(null);
 
@@ -252,10 +252,12 @@ export function Canvas() {
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    // Zoom logic could be added here
-    if (e.ctrlKey) {
+    if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      // Implementation for pinch-to-zoom
+      const delta = e.deltaY > 0 ? -0.05 : 0.05;
+      setZoom(z => Math.max(0.3, Math.min(3, z + delta)));
+    } else {
+      setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
     }
   };
 
@@ -321,7 +323,7 @@ export function Canvas() {
       </svg>
       
       {/* Temporary Zoom Controls. Realistically, we'd hook these to global state to be used by Header too */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 bg-white p-2 rounded-2xl shadow-lg border border-slate-200">
+      <div className="absolute bottom-6 right-6 flex flex-col gap-2 bg-white p-2 rounded-2xl shadow-lg border border-slate-200 print-mode-hide">
         <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">+</button>
         <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700">100%</button>
         <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">-</button>
@@ -329,7 +331,7 @@ export function Canvas() {
 
       <div 
         ref={ghostRef} 
-        className="fixed pointer-events-none z-[9999] hidden bg-bg-card text-text-main font-ui font-bold text-sm px-4 py-2 rounded-full shadow-lg border border-primary opacity-90 -translate-x-1/2 -translate-y-1/2"
+        className="fixed pointer-events-none z-[9999] hidden bg-bg-card text-text-main font-ui font-bold text-sm px-4 py-2 rounded-full shadow-lg border border-primary opacity-90 -translate-x-1/2 -translate-y-1/2 print-mode-hide"
       >
         {draggedGuestId ? useStore.getState().guests.find(g => g.id === draggedGuestId)?.name : ''}
       </div>

@@ -4,7 +4,7 @@ import { type Table, useStore } from '../../store';
 interface TableGroupProps {
   table: Table;
   onEdit: () => void;
-  hoveredTarget?: { tableId: string | number, seatIdx: number } | null;
+  hoveredTarget?: { tableId: string, seatIdx: number } | null;
 }
 
 export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {

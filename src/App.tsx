@@ -4,6 +4,7 @@ import { subscribeToWedding } from './firebase';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { GuestModal } from './components/modals/GuestModal';
+import { TableModal } from './components/modals/TableModal';
 import { TagsModal } from './components/modals/TagsModal';
 import { SeatActionModal } from './components/modals/SeatActionModal';
 import { Canvas } from './components/canvas/Canvas';
@@ -133,12 +134,13 @@ function App() {
       </div>
 
       <GuestModal />
+      <TableModal />
       <TagsModal />
       <SeatActionModal />
       
       {/* Global Sync Indicator */}
       {isSyncing && (
-        <div className="fixed bottom-4 right-4 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg z-50">
+        <div className="fixed bottom-4 right-4 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg z-50 print-mode-hide">
           <Loader2 size={16} className="animate-spin" />
           Синхронизация...
         </div>

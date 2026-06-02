@@ -21,3 +21,7 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+body.print-mode .print-mode-hide {
+  display: none !important;
+}

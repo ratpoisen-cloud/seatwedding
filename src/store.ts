@@ -14,7 +14,7 @@ export interface Guest {
 }
 
 export interface Table {
-  id: string | number;
+  id: string;
   name: string;
   type: "round" | "rect";
   x: number;
@@ -50,12 +50,12 @@ export interface AppState {
   deleteGuest: (id: string) => void;
   
   addTable: (type: "round" | "rect") => void;
-  updateTable: (id: string | number, data: Partial<Table>) => void;
-  deleteTable: (id: string | number) => void;
+  updateTable: (id: string, data: Partial<Table>) => void;
+  deleteTable: (id: string) => void;
   
-  assignSeat: (guestId: string, tableId: string | number, seatIdx: number) => void;
-  unseatGuest: (tableId: string | number, seatIdx: number) => void;
-  swapSeats: (sourceGuestId: string, targetTableId: string | number, targetSeatIdx: number) => void;
+  assignSeat: (guestId: string, tableId: string, seatIdx: number) => void;
+  unseatGuest: (tableId: string, seatIdx: number) => void;
+  swapSeats: (sourceGuestId: string, targetTableId: string, targetSeatIdx: number) => void;
   
   updateLandmark: (x: number, y: number) => void;
   updateTagColor: (tag: string, color: string) => void;
@@ -98,6 +98,13 @@ export const useStore = create<AppState>((set, get) => ({
   // --- Helpers for Syncing ---
   _sync: async () => {
     const state = get();
+    const prevSnapshot = {
+      guests: state.guests,
+      tables: state.tables,
+      landmark: state.landmark,
+      tagColors: state.tagColors,
+    };
+    set({ isSyncing: true, error: null });
     try {
       await saveWeddingData(state.weddingId, {
         guests: state.guests,
@@ -105,14 +112,15 @@ export const useStore = create<AppState>((set, get) => ({
         landmark: state.landmark,
         tagColors: state.tagColors
       });
-    } catch (e) {
-      set({ error: "Ошибка сохранения" });
+      set({ isSyncing: false });
+    } catch {
+      set({ isSyncing: false, error: "Ошибка сохранения", ...prevSnapshot });
     }
   },
 
   // --- Guests ---
   addGuest: (guestData) => {
-    const newGuest = { ...guestData, id: 'g' + Date.now() };
+    const newGuest = { ...guestData, id: crypto.randomUUID() };
     set(state => ({ guests: [...state.guests, newGuest] }));
     get()._sync();
   },
@@ -138,7 +146,7 @@ export const useStore = create<AppState>((set, get) => ({
   // --- Tables ---
   addTable: (type) => {
     const newTable: Table = {
-      id: 't' + Date.now(),
+      id: crypto.randomUUID(),
       name: `Стол ${get().tables.length + 1}`,
       type,
       x: 400, y: 400, rotation: 0,
@@ -179,18 +187,24 @@ export const useStore = create<AppState>((set, get) => ({
       if (!table || seatIdx < 0 || seatIdx >= table.seats.length) return state;
       
       const existingGuestId = table.seats[seatIdx];
-      let newGuests = [...state.guests];
+      if (existingGuestId === guestId) return state;
       
       const newTables = state.tables.map(t => {
-        if (t.id === tableId) {
-          const newSeats = [...t.seats];
-          newSeats[seatIdx] = guestId;
-          return { ...t, seats: newSeats };
+        const newSeats = [...t.seats];
+        
+        const prevSeatIdx = t.seats.indexOf(guestId);
+        if (prevSeatIdx !== -1) {
+          newSeats[prevSeatIdx] = null;
         }
-        return t;
+        
+        if (t.id === tableId) {
+          newSeats[seatIdx] = guestId;
+        }
+        
+        return { ...t, seats: newSeats };
       });
       
-      newGuests = newGuests.map(g => {
+      const newGuests = state.guests.map(g => {
         if (g.id === guestId) return { ...g, seated: true };
         if (existingGuestId && g.id === existingGuestId) return { ...g, seated: false };
         return g;
@@ -231,7 +245,7 @@ export const useStore = create<AppState>((set, get) => ({
       const targetGuestId = targetTable.seats[targetSeatIdx];
 
       // Find where source guest is currently seated
-      let sourceTableId: string | number | null = null;
+      let sourceTableId: string | null = null;
       let sourceSeatIdx = -1;
       
       for (const t of state.tables) {
