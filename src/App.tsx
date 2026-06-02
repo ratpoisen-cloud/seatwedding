@@ -7,6 +7,7 @@ import { GuestModal } from './components/modals/GuestModal';
 import { TableModal } from './components/modals/TableModal';
 import { TagsModal } from './components/modals/TagsModal';
 import { SeatActionModal } from './components/modals/SeatActionModal';
+import { useModalStore } from './components/modals/ModalStore';
 import { Canvas } from './components/canvas/Canvas';
 import { Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -15,6 +16,7 @@ import { toPng } from 'html-to-image';
 function App() {
   const initialize = useStore(state => state.initialize);
   const isSyncing = useStore(state => state.isSyncing);
+  const modalPayload = useModalStore(s => s.payload);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   
@@ -65,7 +67,10 @@ function App() {
       } else {
         useStore.setState(state => ({
            guests: mergedData.guests || state.guests,
-           tables: mergedData.tables || state.tables,
+           tables: (mergedData.tables || state.tables).map((t: any) => ({
+             ...t,
+             rotation: Math.round((t.rotation || 0) / 90) * 90 % 360,
+           })),
            landmark: mergedData.landmark || state.landmark,
            tagColors: mergedData.tagColors || state.tagColors
         }));
@@ -134,7 +139,7 @@ function App() {
       </div>
 
       <GuestModal />
-      <TableModal />
+      <TableModal key={modalPayload?.id || 'table-modal'} />
       <TagsModal />
       <SeatActionModal />
       

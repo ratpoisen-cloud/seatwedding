@@ -100,11 +100,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 return (
                   <div 
                     key={g.id}
-                    draggable={!g.seated}
+                    draggable
                     onDragStart={e => handleDragStart(e, g.id)}
                     className={cn(
                       "group flex items-center justify-between p-3 rounded-xl border border-border bg-bg-card transition-all",
-                      g.seated ? "opacity-50 border-dashed bg-secondary" : "hover:border-primary/50 hover:shadow-sm cursor-grab active:cursor-grabbing",
+                      g.seated ? "opacity-50 border-dashed bg-secondary cursor-grab active:cursor-grabbing" : "hover:border-primary/50 hover:shadow-sm cursor-grab active:cursor-grabbing",
                       g.isQuestion && "border-amber-300 ring-1 ring-amber-100"
                     )}
                   >

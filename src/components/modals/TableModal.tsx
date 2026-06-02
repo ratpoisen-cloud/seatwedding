@@ -4,6 +4,7 @@ import { useModalStore } from './ModalStore';
 import { useStore } from '../../store';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { cn } from '../../utils';
 
 export function TableModal() {
   const { payload, closeModal } = useModalStore();
@@ -11,14 +12,14 @@ export function TableModal() {
 
   const table = payload?.id ? tables.find(t => t.id === payload.id) : null;
   const [name, setName] = useState(table?.name || '');
+  const [tableType, setTableType] = useState<'round' | 'rect'>(table?.type || 'round');
   const [seatCount, setSeatCount] = useState(table?.seats.length || 8);
-  const [rotation, setRotation] = useState(table?.rotation || 0);
 
   const handleSave = () => {
     if (!table || !name.trim()) return;
 
     const newSeats = Array(seatCount).fill(null).map((_, i) => table.seats[i] ?? null);
-    updateTable(table.id, { name: name.trim(), seats: newSeats, rotation });
+    updateTable(table.id, { name: name.trim(), type: tableType, seats: newSeats });
     closeModal();
   };
 
@@ -53,23 +54,33 @@ export function TableModal() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-text-muted mb-1">Поворот (градусы)</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={360}
-              value={rotation}
-              onChange={e => setRotation(parseInt(e.target.value))}
-              className="flex-1 accent-primary"
-            />
-            <span className="text-sm font-bold text-text-main w-10 text-right">{rotation}°</span>
+          <label className="block text-sm font-bold text-text-muted mb-1">Форма стола</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setTableType('round')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
+                tableType === 'round'
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border bg-bg-main text-text-muted hover:border-slate-300"
+              )}
+            >
+              <span className="text-lg">⚪</span> Круглый
+            </button>
+            <button
+              type="button"
+              onClick={() => setTableType('rect')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl border-2 font-bold text-sm transition-all",
+                tableType === 'rect'
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border bg-bg-main text-text-muted hover:border-slate-300"
+              )}
+            >
+              <span className="text-lg">▭</span> Прямоуг.
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm text-text-muted pt-2">
-          <span className="inline-block w-3 h-3 rounded-full bg-emerald-400" />
-          Круглый стол • {table.seats.filter(s => s).length}/{table.seats.length} занято
         </div>
       </div>
 

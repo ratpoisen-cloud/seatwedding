@@ -4,8 +4,56 @@ import { Landmark } from './Landmark';
 import { TableGroup } from './TableGroup';
 import { useModalStore } from '../modals/ModalStore';
 
+function findSeatAtPoint(x: number, y: number): { tableId: string; seatIdx: number } | null {
+  const elements = document.elementsFromPoint(x, y);
+  for (const el of elements) {
+    let current: Element | null = el;
+    while (current) {
+      const cls = current.getAttribute('class');
+      if (cls && cls.split(/\s+/).includes('canvas-seat')) {
+        const tableId = current.getAttribute('data-table-id');
+        const seatIdx = current.getAttribute('data-seat-idx');
+        if (tableId != null && seatIdx != null) {
+          return { tableId, seatIdx: parseInt(seatIdx) };
+        }
+      }
+      current = current.parentElement;
+    }
+  }
+  return null;
+}
+
+function findTableAtPoint(x: number, y: number): string | null {
+  const elements = document.elementsFromPoint(x, y);
+  for (const el of elements) {
+    let current: Element | null = el;
+    while (current) {
+      const cls = current.getAttribute('class');
+      if (cls && cls.split(/\s+/).includes('canvas-table')) {
+        const id = current.getAttribute('data-id');
+        if (id) return id;
+      }
+      current = current.parentElement;
+    }
+  }
+  return null;
+}
+
+function isLandmarkAtPoint(x: number, y: number): boolean {
+  const elements = document.elementsFromPoint(x, y);
+  for (const el of elements) {
+    let current: Element | null = el;
+    while (current) {
+      const cls = current.getAttribute('class');
+      if (cls && cls.split(/\s+/).includes('canvas-landmark')) return true;
+      current = current.parentElement;
+    }
+  }
+  return false;
+}
+
 export function Canvas() {
-  const { tables, landmark, updateLandmark, updateTable, assignSeat } = useStore();
+  const { tables, landmark, updateLandmark, updateTable } = useStore();
   const { openModal } = useModalStore();
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -28,9 +76,13 @@ export function Canvas() {
     startX: number;
     startY: number;
     initialPan?: { x: number, y: number };
-    initialObj?: { x: number, y: number };
+    initialObj?: { x: number; y: number };
   }>({ type: null, startX: 0, startY: 0 });
 
+  // Refs for drag state (always latest, no timing issues)
+  const draggedGuestRef = useRef<string | null>(null);
+  const hoveredTargetRef = useRef<{tableId: string, seatIdx: number} | null>(null);
+  // State for rendering (ghost, seat highlight)
   const [draggedGuestId, setDraggedGuestId] = useState<string | null>(null);
   const [hoveredTarget, setHoveredTarget] = useState<{tableId: string, seatIdx: number} | null>(null);
   
@@ -65,13 +117,8 @@ export function Canvas() {
     const pt = getSVGPoint(e);
     if (!pt) return;
 
-    const target = e.target as HTMLElement;
-    const tableGroup = target.closest('.canvas-table');
-    const isSeat = target.closest('.canvas-seat');
-    const isLabel = target.tagName === 'text';
-
     // 1. Dragging Landmark
-    if (target.closest('.canvas-landmark')) {
+    if (isLandmarkAtPoint(e.clientX, e.clientY)) {
       e.currentTarget.setPointerCapture(e.pointerId);
       dragInfo.current = {
         type: 'landmark',
@@ -82,14 +129,12 @@ export function Canvas() {
       return;
     }
 
-    // 1.5. Dragging Guest (Seat interaction)
-    if (isSeat) {
-      const tableId = (isSeat as HTMLElement).dataset.tableId;
-      const seatIdx = parseInt((isSeat as HTMLElement).dataset.seatIdx || '-1');
-      const table = localTables.find(t => String(t.id) === tableId);
-      
-      if (table && seatIdx >= 0) {
-        const guestId = table.seats[seatIdx];
+    // 2. Dragging Guest (Seat interaction)
+    const seat = findSeatAtPoint(e.clientX, e.clientY);
+    if (seat) {
+      const table = localTables.find(t => String(t.id) === seat.tableId);
+      if (table && seat.seatIdx >= 0) {
+        const guestId = table.seats[seat.seatIdx];
         
         if (guestId) {
           // Occupied seat - prepare for potential drag or click
@@ -97,24 +142,24 @@ export function Canvas() {
           dragInfo.current = {
             type: 'guest',
             guestId,
-            tableId,
-            seatIdx,
+            tableId: seat.tableId,
+            seatIdx: seat.seatIdx,
             startX: e.clientX,
             startY: e.clientY
           };
         } else {
           // Empty seat click - Open modal to add guest
-          openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
+          openModal('guest', { targetTableId: seat.tableId, targetSeatIdx: seat.seatIdx });
         }
       }
       return;
     }
 
-    // 2. Dragging Table
-    if (tableGroup && !isSeat && !isLabel) {
+    // 3. Dragging Table
+    const tableId = findTableAtPoint(e.clientX, e.clientY);
+    if (tableId) {
       e.currentTarget.setPointerCapture(e.pointerId);
-      const id = (tableGroup as HTMLElement).dataset.id;
-      const table = localTables.find(t => String(t.id) === id);
+      const table = localTables.find(t => String(t.id) === tableId);
       if (table) {
         dragInfo.current = {
           type: 'table',
@@ -127,17 +172,15 @@ export function Canvas() {
       return;
     }
 
-    // 3. Panning the canvas
-    if (!target.closest('.canvas-interactive')) {
-      e.currentTarget.setPointerCapture(e.pointerId);
-      dragInfo.current = {
-        type: 'pan',
-        startX: e.clientX,
-        startY: e.clientY,
-        initialPan: { ...pan }
-      };
-      setIsPanning(true);
-    }
+    // 4. Panning the canvas (only on empty background)
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragInfo.current = {
+      type: 'pan',
+      startX: e.clientX,
+      startY: e.clientY,
+      initialPan: { ...pan }
+    };
+    setIsPanning(true);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -156,27 +199,20 @@ export function Canvas() {
       const dy = Math.abs(e.clientY - dragInfo.current.startY);
       
       // Threshold to start drag vs click
-      if (!draggedGuestId && (dx > 5 || dy > 5)) {
-        setDraggedGuestId(dragInfo.current.guestId!);
+      if (!draggedGuestRef.current && (dx > 5 || dy > 5)) {
+        draggedGuestRef.current = dragInfo.current.guestId!;
+        setDraggedGuestId(draggedGuestRef.current);
       }
 
-      if (draggedGuestId && ghostRef.current) {
+      if (draggedGuestRef.current && ghostRef.current) {
         ghostRef.current.style.display = 'block';
         ghostRef.current.style.left = `${e.clientX + 10}px`;
         ghostRef.current.style.top = `${e.clientY + 10}px`;
 
         // Hit test for hovered seat
-        const elements = document.elementsFromPoint(e.clientX, e.clientY);
-        const seatEl = elements.find(el => el.classList.contains('canvas-seat')) as HTMLElement;
-        if (seatEl) {
-          const tableId = seatEl.dataset.tableId;
-          const seatIdx = parseInt(seatEl.dataset.seatIdx || '-1');
-          if (tableId && seatIdx >= 0) {
-            setHoveredTarget({ tableId, seatIdx });
-          }
-        } else {
-          setHoveredTarget(null);
-        }
+        const seat = findSeatAtPoint(e.clientX, e.clientY);
+        hoveredTargetRef.current = seat;
+        setHoveredTarget(seat);
       }
       return;
     }
@@ -218,13 +254,13 @@ export function Canvas() {
     }
 
     if (dragInfo.current.type === 'guest') {
-      if (draggedGuestId) {
+      if (draggedGuestRef.current) {
         // Was dragging
-        if (hoveredTarget) {
-          useStore.getState().swapSeats(draggedGuestId, hoveredTarget.tableId, hoveredTarget.seatIdx);
+        const target = hoveredTargetRef.current;
+        if (target) {
+          useStore.getState().swapSeats(draggedGuestRef.current, target.tableId, target.seatIdx);
         } else {
-          // Dropped on empty space - unseat? 
-          // A good UX choice: drag to empty space unseats the guest.
+          // Dropped on empty space - unseat
           if (dragInfo.current.tableId && dragInfo.current.seatIdx !== undefined) {
              useStore.getState().unseatGuest(dragInfo.current.tableId, dragInfo.current.seatIdx);
           }
@@ -240,6 +276,8 @@ export function Canvas() {
         }
       }
       
+      draggedGuestRef.current = null;
+      hoveredTargetRef.current = null;
       setDraggedGuestId(null);
       setHoveredTarget(null);
       if (ghostRef.current) {
@@ -265,21 +303,28 @@ export function Canvas() {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+
+    // Highlight seat on hover during HTML DnD
+    const seat = findSeatAtPoint(e.clientX, e.clientY);
+    if (seat) {
+      hoveredTargetRef.current = seat;
+      setHoveredTarget(seat);
+    } else {
+      hoveredTargetRef.current = null;
+      setHoveredTarget(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    hoveredTargetRef.current = null;
+    setHoveredTarget(null);
     const guestId = e.dataTransfer.getData('guestId');
     if (!guestId) return;
 
-    // If dropped on a seat
-    const seatEl = (e.target as HTMLElement).closest('.canvas-seat');
-    if (seatEl) {
-      const tableId = (seatEl as HTMLElement).dataset.tableId;
-      const seatIdx = parseInt((seatEl as HTMLElement).dataset.seatIdx || '-1');
-      if (tableId && seatIdx >= 0) {
-        assignSeat(guestId, tableId, seatIdx);
-      }
+    const seat = findSeatAtPoint(e.clientX, e.clientY);
+    if (seat) {
+      useStore.getState().swapSeats(guestId, seat.tableId, seat.seatIdx);
     }
   };
 
@@ -297,6 +342,8 @@ export function Canvas() {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">

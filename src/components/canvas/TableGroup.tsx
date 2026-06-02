@@ -7,16 +7,35 @@ interface TableGroupProps {
   hoveredTarget?: { tableId: string, seatIdx: number } | null;
 }
 
+function getFitFontSize(text: string, maxWidth: number, maxSize = 14, minSize = 8): number {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return maxSize;
+  let size = maxSize;
+  while (size >= minSize) {
+    ctx.font = `800 ${size}px Nunito`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 0.5;
+  }
+  return minSize;
+}
+
 export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
-  const { guests, tagColors } = useStore();
+  const { guests, tagColors, updateTable } = useStore();
 
   const roundRadius = 60;
   const rectW = 160;
   const rectH = 80;
   const seatRadius = 18;
-  const seatDist = 35; // Closer to table
+  const seatDist = 35;
 
   const count = table.seats.length;
+
+  const rotateBtn = table.type === 'round'
+    ? { x: 0, y: -(roundRadius + seatDist + 18) }
+    : { x: rectW / 2 + 18, y: -(rectH / 2 + 18) };
+
+  const nameMaxWidth = table.type === 'round' ? roundRadius * 2 * 0.75 : rectW * 0.85;
+  const nameFontSize = getFitFontSize(table.name, nameMaxWidth);
 
   return (
     <g 
@@ -43,17 +62,35 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
         />
       )}
 
-      {/* Label */}
-      <text 
-        className="font-ui text-sm font-extrabold fill-text-main text-anchor-middle cursor-pointer pointer-events-auto hover:fill-primary transition-colors"
-        y={4}
-        onClick={(e) => {
+      {/* Label (click to open settings) */}
+      <text
+        x={0}
+        y={0}
+        dy=".35em"
+        textAnchor="middle"
+        fontSize={nameFontSize}
+        fill="#0f172a"
+        className="font-ui font-extrabold cursor-pointer pointer-events-auto hover:fill-[#6366f1] transition-colors"
+        transform={`rotate(${-table.rotation}, 0, 0)`}
+        onPointerDown={e => {
           e.stopPropagation();
           onEdit();
         }}
       >
         {table.name}
       </text>
+
+      {/* Rotate button (click to rotate 45°) */}
+      <g
+        className="canvas-rotate-btn cursor-pointer pointer-events-auto"
+        onPointerDown={e => {
+          e.stopPropagation();
+          updateTable(table.id, { rotation: ((table.rotation || 0) + 45) % 360 });
+        }}
+      >
+        <circle cx={rotateBtn.x} cy={rotateBtn.y} r={14} fill="white" stroke="#cbd5e1" strokeWidth={2} className="hover:stroke-primary transition-colors" />
+        <text x={rotateBtn.x} y={rotateBtn.y + 5} textAnchor="middle" className="fill-slate-500 text-base pointer-events-none select-none">↻</text>
+      </g>
 
       {/* Seats */}
       {table.seats.map((guestId, idx) => {
@@ -112,7 +149,9 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
               <text 
                 x={x} 
                 y={labelY} 
-                className="font-ui text-xs font-bold fill-text-main text-anchor-middle pointer-events-none"
+                textAnchor="middle"
+                fill="#0f172a"
+                className="font-ui text-xs font-bold pointer-events-none"
                 transform={`rotate(${-table.rotation}, ${x}, ${labelY})`}
               >
                 {guest.name.split(' ')[0]}

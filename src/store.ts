@@ -85,7 +85,10 @@ export const useStore = create<AppState>((set, get) => ({
   initialize: (weddingId, data) => set({
     weddingId,
     guests: data?.guests || [],
-    tables: data?.tables || [],
+    tables: (data?.tables || []).map((t: Table) => ({
+      ...t,
+      rotation: Math.round((t.rotation || 0) / 90) * 90 % 360,
+    })),
     landmark: data?.landmark || { x: 800, y: 500 },
     tagColors: data?.tagColors || { ...defaultTags },
     isSyncing: false,
