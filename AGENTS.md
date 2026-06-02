@@ -61,19 +61,38 @@ src/
 7. **print-mode CSS** hides overlays during screenshot
 8. **assignSeat** clears guest's previous seat before assigning new one
 9. **Firestore merge** uses `hasPendingWrites` — skips own echo updates
+10. **Stale closure fix** — `handleSeatClick` and `handlePointerDown` now use `useStore.getState()` / `useModalStore.getState()` to read fresh state, avoiding stale closures over `selectedGuestId`, `moveModeGuestId`, and `tables`
+11. **Direct seat handlers** — replaced `findSeatAtPoint` (DOM `elementsFromPoint` traversal) with direct `onPointerDown` on each seat `<circle>` in TableGroup.tsx. Each seat now handles its own click via React event with `stopPropagation`, completely eliminating the fragile `findSeatAtPoint` lookup
 
 ### TableModal (settings)
 - Fields: name, type selector (round/rect toggle), seat count, delete button
 - NO rotation control (rotation is on canvas only)
 - Re-mounts on open via `key={payload?.id}` to properly initialize form state
 
-### Drag-and-drop on canvas
+### Click-based seat management (no drag-and-drop)
+- Click guest in sidebar → guest highlights, `selectedGuestId` is set
+- Next click on seat → `assignSeat` (empty) or `swapSeats` (occupied), clears `selectedGuestId`
+- Right-click / click occupied seat → `SeatActionModal` with 3 options:
+  - «Убрать» → `unseatGuest`
+  - «Заменить» → shows list of unseated guests → click replaces occupant
+  - «Пересадить» → sets `moveModeGuestId`, closes modal → next seat click places/swaps
+- Click empty seat (nothing selected) → opens `GuestModal` (new guest for that seat)
+
+### Drag operations on canvas (ONLY table/landmark/pan)
 - Left-drag on background → pan
 - Left-drag on table body → move table
-- Left-drag on seat (occupied) → drag guest to swap seats
-- Left-drag on seat (empty) → opens GuestModal
-- Drag guest from sidebar → drop on seat → assign
-- Drag guest from seat to empty space → unseat
+- Left-drag on landmark → move landmark
+- NO drag on seats, NO sidebar-to-seat drag, NO guest-from-seat drag
+
+### Stale closure prevention (IMPORTANT)
+- Canvas event handlers (`handleSeatClick`, `handlePointerDown`) read `selectedGuestId`, `moveModeGuestId`, and `tables` via `useStore.getState()` / `useModalStore.getState()` instead of from component closure — ensures fresh state even if React re-render hasn't committed yet
+- Do NOT switch back to closure-based reads for these values; the `getState()` pattern is intentional
+
+### Direct seat handlers
+- Seat clicks are handled via `onPointerDown` on each `<circle>` in TableGroup.tsx, NOT via `handlePointerDown` on SVG
+- The seat's handler calls `e.stopPropagation()` so the event never reaches `handlePointerDown` — seat clicks and table/background drags are completely separate paths
+- `handleSeatClick` is passed as `onSeatClick` prop from Canvas to each TableGroup
+- `findSeatAtPoint` has been removed — no more fragile DOM traversal
 
 ### SVG text rules (IMPORTANT)
 - Use `textAnchor="middle"` as SVG attribute, NOT CSS class `text-anchor-middle` (inert)

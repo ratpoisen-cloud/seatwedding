@@ -1,10 +1,10 @@
-
 import { type Table, useStore } from '../../store';
 
 interface TableGroupProps {
   table: Table;
   onEdit: () => void;
-  hoveredTarget?: { tableId: string, seatIdx: number } | null;
+  selectedGuestId?: string | null;
+  onSeatClick?: (tableId: string, seatIdx: number, guestId: string | null) => void;
 }
 
 function getFitFontSize(text: string, maxWidth: number, maxSize = 14, minSize = 8): number {
@@ -19,7 +19,15 @@ function getFitFontSize(text: string, maxWidth: number, maxSize = 14, minSize = 
   return minSize;
 }
 
-export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
+function statusLabel(status: string, isQuestion: boolean): string {
+  if (isQuestion) return 'Под вопросом';
+  if (status === 'Приглашение принято') return 'Принято';
+  if (status === 'Отклонено') return 'Отклонено';
+  if (status === 'Не приглашен') return 'Не приглашен';
+  return status;
+}
+
+export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: TableGroupProps) {
   const { guests, tagColors, updateTable } = useStore();
 
   const roundRadius = 60;
@@ -38,31 +46,29 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
   const nameFontSize = getFitFontSize(table.name, nameMaxWidth);
 
   return (
-    <g 
-      className="canvas-table cursor-grab active:cursor-grabbing" 
+    <g
+      className="canvas-table cursor-grab active:cursor-grabbing"
       data-id={table.id}
       transform={`translate(${table.x}, ${table.y}) rotate(${table.rotation})`}
     >
-      {/* Base Shape */}
       {table.type === 'round' ? (
-        <circle 
-          className="fill-bg-card stroke-border stroke-[3px] hover:stroke-slate-400 transition-colors" 
-          r={roundRadius} 
-          filter="url(#soft-shadow)" 
+        <circle
+          className="fill-bg-card stroke-border stroke-[3px] hover:stroke-slate-400 transition-colors"
+          r={roundRadius}
+          filter="url(#soft-shadow)"
         />
       ) : (
-        <rect 
+        <rect
           className="fill-bg-card stroke-border stroke-[3px] hover:stroke-slate-400 transition-colors"
-          width={rectW} 
-          height={rectH} 
-          x={-rectW / 2} 
-          y={-rectH / 2} 
+          width={rectW}
+          height={rectH}
+          x={-rectW / 2}
+          y={-rectH / 2}
           rx={12}
           filter="url(#soft-shadow)"
         />
       )}
 
-      {/* Label (click to open settings) */}
       <text
         x={0}
         y={0}
@@ -80,7 +86,6 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
         {table.name}
       </text>
 
-      {/* Rotate button (click to rotate 45°) */}
       <g
         className="canvas-rotate-btn cursor-pointer pointer-events-auto"
         onPointerDown={e => {
@@ -92,10 +97,9 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
         <text x={rotateBtn.x} y={rotateBtn.y + 5} textAnchor="middle" className="fill-slate-500 text-base pointer-events-none select-none">↻</text>
       </g>
 
-      {/* Seats */}
       {table.seats.map((guestId, idx) => {
         let x = 0, y = 0;
-        
+
         if (table.type === 'round') {
           const angle = (idx / count) * Math.PI * 2;
           const dist = roundRadius + seatDist;
@@ -112,43 +116,56 @@ export function TableGroup({ table, onEdit, hoveredTarget }: TableGroupProps) {
 
         const guest = guestId ? guests.find(g => g.id === guestId) : null;
         const tagColor = guest?.labels?.[0] ? tagColors[guest.labels[0]] : null;
-        
-        const isHovered = hoveredTarget?.tableId === String(table.id) && hoveredTarget?.seatIdx === idx;
-        
+
+        const isSelected = guestId && selectedGuestId === guestId;
+
         const isTop = y < 0;
         let labelY = y + (isTop ? -20 : 28);
-        
-        // Stagger labels on rect tables to prevent overlap
+
         if (table.type === 'rect') {
           const subIdx = idx % Math.ceil(count / 2);
           if (subIdx % 2 === 1) {
             labelY += (isTop ? -14 : 14);
           }
         }
-        
+
+        const seatFill = isSelected
+          ? '#6366f1'
+          : (tagColor || (guest ? '#6366f1' : '#f1f5f9'));
+        const seatStroke = isSelected
+          ? '#4f46e5'
+          : (tagColor || (guest ? '#4f46e5' : '#cbd5e1'));
+        const seatStrokeWidth = isSelected ? 4 : undefined;
+
+        const tooltipText = guest
+          ? `${guest.name}\n${guest.labels?.[0] || guest.group || 'Без группы'}\n${statusLabel(guest.status, guest.isQuestion)}`
+          : undefined;
+
         return (
           <g key={`${table.id}-seat-${idx}`} className="canvas-seat" data-table-id={table.id} data-seat-idx={idx}>
-            <circle 
-              cx={x} 
-              cy={y} 
+            <circle
+              cx={x}
+              cy={y}
               r={seatRadius}
               className={`stroke-2 cursor-pointer transition-all hover:brightness-95 hover:stroke-[3px] pointer-events-auto ${guest?.isQuestion ? 'stroke-dashed animate-[pulse-stroke_2s_infinite]' : ''}`}
               style={{
-                fill: tagColor || (guest ? '#6366f1' : '#f1f5f9'),
-                stroke: isHovered ? '#000' : (tagColor || (guest ? '#4f46e5' : '#cbd5e1')),
-                strokeWidth: isHovered ? 4 : undefined
+                fill: seatFill,
+                stroke: seatStroke,
+                strokeWidth: seatStrokeWidth,
               }}
-              onPointerDown={() => {
-                // Handled in Canvas
+              onPointerDown={e => {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                onSeatClick?.(table.id, idx, guestId);
               }}
             >
-              {guest && <title>{guest.name} ({guest.labels?.[0] || guest.group})</title>}
+              {tooltipText && <title>{tooltipText}</title>}
             </circle>
 
             {guest && (
-              <text 
-                x={x} 
-                y={labelY} 
+              <text
+                x={x}
+                y={labelY}
                 textAnchor="middle"
                 fill="#0f172a"
                 className="font-ui text-xs font-bold pointer-events-none"

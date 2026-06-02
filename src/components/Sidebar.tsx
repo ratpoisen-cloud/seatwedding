@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '../store';
 import { useModalStore } from './modals/ModalStore';
@@ -17,43 +16,39 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const tables = useStore(state => state.tables);
   const addTable = useStore(state => state.addTable);
   const tagColors = useStore(state => state.tagColors);
-  const { openModal } = useModalStore();
+  const { openModal, selectedGuestId, setSelectedGuestId } = useModalStore();
   const [activeTab, setActiveTab] = useState<'guests' | 'tables'>('guests');
   const [search, setSearch] = useState('');
 
   const filteredGuests = guests
-    .filter(g => 
-      g.name.toLowerCase().includes(search.toLowerCase()) || 
+    .filter(g =>
+      g.name.toLowerCase().includes(search.toLowerCase()) ||
       (g.labels[0] || g.group || '').toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const handleDragStart = (e: React.DragEvent, guestId: string) => {
-    e.dataTransfer.setData('guestId', guestId);
-    e.dataTransfer.effectAllowed = 'copyMove';
-    // Close sidebar on mobile when dragging starts
-    if (window.innerWidth <= 1024) {
-      onClose();
+  const handleGuestClick = (guestId: string) => {
+    if (selectedGuestId === guestId) {
+      setSelectedGuestId(null);
+    } else {
+      setSelectedGuestId(guestId);
     }
   };
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/40 z-20 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       <aside className={cn(
         "w-96 max-w-[85vw] flex flex-col bg-bg-card border-r border-border h-full shadow-lg z-30 absolute lg:static top-0 left-0 transition-transform duration-300 ease-in-out lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
 
-      
-      {/* Tabs */}
       <div className="flex border-b border-border">
         <button
           className={cn(
@@ -80,14 +75,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="flex flex-col h-full p-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-              <Input 
-                placeholder="Поиск гостей..." 
+              <Input
+                placeholder="Поиск гостей..."
                 className="pl-10"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            
+
             <Button className="w-full gap-2" onClick={() => openModal('guest')}>
               <Plus size={18} /> Новый гость
             </Button>
@@ -96,16 +91,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {filteredGuests.map(g => {
                 const tag = g.labels[0] || g.group;
                 const color = tagColors[tag] || '#94a3b8';
-                
+                const isSelected = selectedGuestId === g.id;
+
                 return (
-                  <div 
+                  <div
                     key={g.id}
-                    draggable
-                    onDragStart={e => handleDragStart(e, g.id)}
+                    onClick={() => handleGuestClick(g.id)}
                     className={cn(
-                      "group flex items-center justify-between p-3 rounded-xl border border-border bg-bg-card transition-all",
-                      g.seated ? "opacity-50 border-dashed bg-secondary cursor-grab active:cursor-grabbing" : "hover:border-primary/50 hover:shadow-sm cursor-grab active:cursor-grabbing",
-                      g.isQuestion && "border-amber-300 ring-1 ring-amber-100"
+                      "group flex items-center justify-between p-3 rounded-xl border border-border bg-bg-card transition-all cursor-pointer",
+                      g.seated ? "opacity-50 border-dashed bg-secondary" : "hover:border-primary/50 hover:shadow-sm",
+                      g.isQuestion && "border-amber-300 ring-1 ring-amber-100",
+                      isSelected && "ring-2 ring-primary border-primary shadow-sm"
                     )}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -126,9 +122,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </div>
                       </div>
                     </div>
-                    
-                    <button 
-                      onClick={() => openModal('guest', { id: g.id })}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openModal('guest', { id: g.id });
+                      }}
                       className="opacity-0 group-hover:opacity-100 p-2 text-text-muted hover:text-primary transition-opacity focus:outline-none"
                     >
                       <Edit2 size={16} />
@@ -149,7 +148,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Button className="flex-1" variant="secondary" onClick={() => addTable('round')}>⚪ Круглый</Button>
               <Button className="flex-1" variant="secondary" onClick={() => addTable('rect')}>▭ Прямоуг.</Button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {tables.map(table => {
                 const seatedCount = table.seats.filter(s => s).length;
@@ -161,7 +160,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         {table.type === 'round' ? 'Круглый' : 'Прямоугольный'} • {seatedCount}/{table.seats.length} занято
                       </span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => openModal('table', { id: table.id })}
                       className="p-2 text-text-muted hover:text-primary transition-colors focus:outline-none"
                     >
