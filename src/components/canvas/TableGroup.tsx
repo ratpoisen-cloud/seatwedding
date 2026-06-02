@@ -157,7 +157,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
         const isSelected = guestId && selectedGuestId === guestId;
         const isDropHover = dropHover?.tableId === table.id && dropHover.seatIdx === idx;
 
-        const labelGap = 28;
+        const labelGap = table.type === 'round' ? 46 : 28;
         let labelX: number, labelY: number;
 
         if (table.type === 'round') {
