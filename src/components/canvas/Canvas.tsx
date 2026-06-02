@@ -33,6 +33,23 @@ function isLandmarkAtPoint(x: number, y: number): boolean {
   return false;
 }
 
+function findSeatAtClientPoint(x: number, y: number): { tableId: string; seatIdx: number } | null {
+  const elements = document.elementsFromPoint(x, y);
+  for (const el of elements) {
+    let cur: Element | null = el;
+    while (cur) {
+      const cls = cur.getAttribute('class');
+      if (cls && cls.split(/\s+/).includes('canvas-seat')) {
+        const tid = cur.getAttribute('data-table-id');
+        const sidx = cur.getAttribute('data-seat-idx');
+        if (tid && sidx !== null) return { tableId: tid, seatIdx: parseInt(sidx) };
+      }
+      cur = cur.parentElement;
+    }
+  }
+  return null;
+}
+
 export function Canvas() {
   const tables = useStore(s => s.tables);
   const landmark = useStore(s => s.landmark);
@@ -45,7 +62,6 @@ export function Canvas() {
   const setSelectedGuestId = useModalStore(s => s.setSelectedGuestId);
   const setMoveModeGuestId = useModalStore(s => s.setMoveModeGuestId);
   const svgRef = useRef<SVGSVGElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -71,50 +87,18 @@ export function Canvas() {
     }
   }, [landmark, tables]);
 
+  // Document-level pointerup to cancel guest drag when released outside canvas
   useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-
-    let lastHover: { tableId: string; seatIdx: number } | null = null;
-
-    const onDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      let cur: Element | null = e.target as Element;
-      while (cur) {
-        const cls = cur.getAttribute('class');
-        if (cls && cls.split(/\s+/).includes('canvas-seat')) {
-          const tid = cur.getAttribute('data-table-id');
-          const sidx = cur.getAttribute('data-seat-idx');
-          if (tid && sidx !== null) {
-            const parsed = parseInt(sidx);
-            if (!lastHover || lastHover.tableId !== tid || lastHover.seatIdx !== parsed) {
-              lastHover = { tableId: tid, seatIdx: parsed };
-              setDropHover(lastHover);
-            }
-          }
-          return;
-        }
-        cur = cur.parentElement;
-      }
-      if (lastHover) {
-        lastHover = null;
+    const onPointerUp = () => {
+      const { guestDragId: dragId } = useModalStore.getState();
+      if (dragId) {
+        useModalStore.getState().setGuestDrag(null);
         setDropHover(null);
       }
     };
-
-    const onDragEnd = () => {
-      setDropHover(null);
-      lastHover = null;
-    };
-
-    wrapper.addEventListener('dragover', onDragOver);
-    document.addEventListener('dragend', onDragEnd);
-
-    return () => {
-      wrapper.removeEventListener('dragover', onDragOver);
-      document.removeEventListener('dragend', onDragEnd);
-    };
-  }, [assignSeat, swapSeats]);
+    document.addEventListener('pointerup', onPointerUp);
+    return () => document.removeEventListener('pointerup', onPointerUp);
+  }, []);
 
   const getSVGPoint = (e: React.PointerEvent) => {
     if (!svgRef.current) return null;
@@ -131,39 +115,24 @@ export function Canvas() {
     seatIdx: number,
     guestId: string | null,
   ) => {
-    // Read fresh state from store to avoid stale closures
     const { selectedGuestId: freshSelected, moveModeGuestId: freshMove } = useModalStore.getState();
 
-    // Priority 1: moveMode is active → пересаживаем гостя
     if (freshMove) {
-      if (guestId) {
-        swapSeats(freshMove, tableId, seatIdx);
-      } else {
-        assignSeat(freshMove, tableId, seatIdx);
-      }
+      if (guestId) swapSeats(freshMove, tableId, seatIdx);
+      else assignSeat(freshMove, tableId, seatIdx);
       setMoveModeGuestId(null);
       return;
     }
 
-    // Priority 2: selectedGuestId is active → сажаем выбранного из списка
     if (freshSelected) {
-      if (guestId) {
-        swapSeats(freshSelected, tableId, seatIdx);
-      } else {
-        assignSeat(freshSelected, tableId, seatIdx);
-      }
+      if (guestId) swapSeats(freshSelected, tableId, seatIdx);
+      else assignSeat(freshSelected, tableId, seatIdx);
       setSelectedGuestId(null);
       return;
     }
 
-    // Priority 3: nothing selected
-    if (guestId) {
-      // Занятое место → открываем модалку действий
-      openModal('seatAction', { guestId, tableId, seatIdx });
-    } else {
-      // Пустое место → создаём нового гостя
-      openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
-    }
+    if (guestId) openModal('seatAction', { guestId, tableId, seatIdx });
+    else openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -172,7 +141,6 @@ export function Canvas() {
     const pt = getSVGPoint(e);
     if (!pt) return;
 
-    // 1. Landmark
     if (isLandmarkAtPoint(e.clientX, e.clientY)) {
       e.currentTarget.setPointerCapture(e.pointerId);
       dragInfo.current = {
@@ -184,7 +152,6 @@ export function Canvas() {
       return;
     }
 
-    // 2. Table drag
     const tableId = findTableAtPoint(e.clientX, e.clientY);
     if (tableId) {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -202,7 +169,6 @@ export function Canvas() {
       return;
     }
 
-    // 3. Pan
     e.currentTarget.setPointerCapture(e.pointerId);
     dragInfo.current = {
       type: 'pan',
@@ -214,6 +180,24 @@ export function Canvas() {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    // Guest drag from sidebar — highlight seat under cursor
+    const { guestDragId: dragId, guestDragStart: dragStart } = useModalStore.getState();
+    if (dragId && dragStart) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        const hit = findSeatAtClientPoint(e.clientX, e.clientY);
+        setDropHover(prev => {
+          if (!hit) return null;
+          if (prev?.tableId === hit.tableId && prev.seatIdx === hit.seatIdx) return prev;
+          return hit;
+        });
+      } else {
+        setDropHover(null);
+      }
+      return;
+    }
+
     if (dragInfo.current.type === 'pan' && dragInfo.current.initialPan) {
       const dx = e.clientX - dragInfo.current.startX;
       const dy = e.clientY - dragInfo.current.startY;
@@ -247,6 +231,28 @@ export function Canvas() {
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
+    // Guest drag — process drop on seat
+    const { guestDragId: dragId, guestDragStart: dragStart } = useModalStore.getState();
+    if (dragId && dragStart) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        const hit = findSeatAtClientPoint(e.clientX, e.clientY);
+        if (hit) {
+          const { tables: freshTables } = useStore.getState();
+          const table = freshTables.find(t => t.id === hit.tableId);
+          if (table) {
+            const occupantId = table.seats[hit.seatIdx];
+            if (occupantId) swapSeats(dragId, hit.tableId, hit.seatIdx);
+            else assignSeat(dragId, hit.tableId, hit.seatIdx);
+          }
+        }
+      }
+      useModalStore.getState().setGuestDrag(null);
+      setDropHover(null);
+      return;
+    }
+
     e.currentTarget.releasePointerCapture(e.pointerId);
 
     if (dragInfo.current.type === 'landmark') {
@@ -275,41 +281,7 @@ export function Canvas() {
   };
 
   return (
-    <div
-      ref={wrapperRef}
-      className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : ''}`}
-      onDragEnter={(e) => { e.preventDefault(); }}
-      onDragOver={(e) => { e.preventDefault(); }}
-      onDragLeave={(e) => {
-        if (e.currentTarget === wrapperRef.current && !e.currentTarget.contains(e.relatedTarget as Node)) {
-          setDropHover(null);
-        }
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDropHover(null);
-        const guestId = e.dataTransfer.getData('text/plain');
-        if (!guestId) return;
-        let cur: Element | null = e.target as Element;
-        while (cur) {
-          const cls = cur.getAttribute('class');
-          if (cls && cls.split(/\s+/).includes('canvas-seat')) {
-            const targetTableId = cur.getAttribute('data-table-id');
-            const seatIdxAttr = cur.getAttribute('data-seat-idx');
-            if (!targetTableId || seatIdxAttr === null) return;
-            const targetSeatIdx = parseInt(seatIdxAttr);
-            const { tables: ft } = useStore.getState();
-            const table = ft.find(t => t.id === targetTableId);
-            if (!table) return;
-            const occupantId = table.seats[targetSeatIdx];
-            if (occupantId) swapSeats(guestId, targetTableId, targetSeatIdx);
-            else assignSeat(guestId, targetTableId, targetSeatIdx);
-            return;
-          }
-          cur = cur.parentElement;
-        }
-      }}
-    >
+    <div className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : ''}`}>
       <svg
         ref={svgRef}
         className="w-full h-full touch-none"

@@ -14,7 +14,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const guests = useStore(state => state.guests);
   const tagColors = useStore(state => state.tagColors);
-  const { openModal, selectedGuestId, setSelectedGuestId } = useModalStore();
+  const { openModal, selectedGuestId, setSelectedGuestId, setGuestDrag } = useModalStore();
   const [search, setSearch] = useState('');
 
   const sortedGuests = useMemo(() => {
@@ -82,14 +82,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               return (
                 <div
                   key={g.id}
-                  draggable="true"
                   onClick={() => handleGuestClick(g.id)}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', g.id);
-                    e.dataTransfer.effectAllowed = 'move';
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    setGuestDrag(g.id, { x: e.clientX, y: e.clientY });
                   }}
                   className={cn(
-                    "group flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-grab active:cursor-grabbing",
+                    "group flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer",
                     g.seated
                       ? "border-dashed border-text-muted/30 bg-white/60 opacity-60 hover:opacity-80"
                       : "border-transparent bg-white hover:border-accent/30 hover:shadow-[var(--shadow-card)]",
