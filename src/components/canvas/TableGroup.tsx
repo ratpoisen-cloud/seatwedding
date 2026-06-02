@@ -100,10 +100,11 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
 
       {table.seats.map((guestId, idx) => {
         let x = 0, y = 0;
+        let dist = 0;
 
         if (table.type === 'round') {
           const angle = (idx / count) * Math.PI * 2;
-          const dist = roundRadius + seatDist;
+          dist = roundRadius + seatDist;
           x = Math.cos(angle) * dist;
           y = Math.sin(angle) * dist;
         } else {
@@ -122,9 +123,16 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
         const isDropHover = dropHover?.tableId === table.id && dropHover.seatIdx === idx;
 
         const isTop = y < 0;
-        let labelY = y + (isTop ? -20 : 28);
+        let labelX = x;
+        let labelY: number;
 
-        if (table.type === 'rect') {
+        if (table.type === 'round') {
+          const angle = (idx / count) * Math.PI * 2;
+          const labelDist = dist + 32;
+          labelX = Math.cos(angle) * labelDist;
+          labelY = Math.sin(angle) * labelDist;
+        } else {
+          labelY = y + (isTop ? -26 : 34);
           const subIdx = idx % Math.ceil(count / 2);
           if (subIdx % 2 === 1) {
             labelY += (isTop ? -14 : 14);
@@ -170,12 +178,13 @@ export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatCl
 
             {guest && (
               <text
-                x={x}
+                x={labelX}
                 y={labelY}
+                dy=".35em"
                 textAnchor="middle"
                 fill="#283618"
                 className="font-ui text-xs font-bold pointer-events-none"
-                transform={`rotate(${-table.rotation}, ${x}, ${labelY})`}
+                transform={`rotate(${-table.rotation}, ${labelX}, ${labelY})`}
               >
                 {guest.name.split(' ')[0]}
               </text>
