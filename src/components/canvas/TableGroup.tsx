@@ -4,6 +4,7 @@ interface TableGroupProps {
   table: Table;
   onEdit: () => void;
   selectedGuestId?: string | null;
+  dropHover?: { tableId: string; seatIdx: number } | null;
   onSeatClick?: (tableId: string, seatIdx: number, guestId: string | null) => void;
 }
 
@@ -27,7 +28,7 @@ function statusLabel(status: string, isQuestion: boolean): string {
   return status;
 }
 
-export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: TableGroupProps) {
+export function TableGroup({ table, onEdit, selectedGuestId, dropHover, onSeatClick }: TableGroupProps) {
   const { guests, tagColors, updateTable } = useStore();
 
   const roundRadius = 60;
@@ -118,6 +119,7 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
         const tagColor = guest?.labels?.[0] ? tagColors[guest.labels[0]] : null;
 
         const isSelected = guestId && selectedGuestId === guestId;
+        const isDropHover = dropHover?.tableId === table.id && dropHover.seatIdx === idx;
 
         const isTop = y < 0;
         let labelY = y + (isTop ? -20 : 28);
@@ -131,11 +133,15 @@ export function TableGroup({ table, onEdit, selectedGuestId, onSeatClick }: Tabl
 
         const seatFill = isSelected
           ? '#283618'
-          : (tagColor || (guest ? '#C9A25B' : '#fefae0'));
+          : isDropHover
+            ? 'rgba(96, 108, 56, 0.15)'
+            : (tagColor || (guest ? '#C9A25B' : '#fefae0'));
         const seatStroke = isSelected
           ? '#1a2610'
-          : (tagColor || (guest ? '#B8924A' : '#606c38'));
-        const seatStrokeWidth = isSelected ? 4 : undefined;
+          : isDropHover
+            ? '#606c38'
+            : (tagColor || (guest ? '#B8924A' : '#606c38'));
+        const seatStrokeWidth = isSelected ? 4 : (isDropHover ? 4 : undefined);
 
         const tooltipText = guest
           ? `${guest.name}\n${guest.labels?.[0] || guest.group || 'Без группы'}\n${statusLabel(guest.status, guest.isQuestion)}`

@@ -49,6 +49,7 @@ export function Canvas() {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [dropHover, setDropHover] = useState<{ tableId: string; seatIdx: number } | null>(null);
 
   const dragInfo = useRef<{
     type: 'pan' | 'landmark' | 'table' | null;
@@ -68,6 +69,82 @@ export function Canvas() {
       setLocalTables(tables);
     }
   }, [landmark, tables]);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const onDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      // Find seat under cursor for visual highlight
+      const elements = document.elementsFromPoint(e.clientX, e.clientY);
+      for (const el of elements) {
+        let cur: Element | null = el;
+        while (cur) {
+          const cls = cur.getAttribute('class');
+          if (cls && cls.split(/\s+/).includes('canvas-seat')) {
+            const tid = cur.getAttribute('data-table-id');
+            const sidx = cur.getAttribute('data-seat-idx');
+            if (tid && sidx !== null) {
+              const parsed = parseInt(sidx);
+              setDropHover(prev => {
+                if (!prev || prev.tableId !== tid || prev.seatIdx !== parsed) {
+                  return { tableId: tid, seatIdx: parsed };
+                }
+                return prev;
+              });
+            }
+            return;
+          }
+          cur = cur.parentElement;
+        }
+      }
+      setDropHover(null);
+    };
+
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setDropHover(null);
+      const guestId = e.dataTransfer?.getData('text/plain');
+      if (!guestId) return;
+
+      const elements = document.elementsFromPoint(e.clientX, e.clientY);
+      for (const el of elements) {
+        let cur: Element | null = el;
+        while (cur) {
+          const cls = cur.getAttribute('class');
+          if (cls && cls.split(/\s+/).includes('canvas-seat')) {
+            const targetTableId = cur.getAttribute('data-table-id');
+            const seatIdxAttr = cur.getAttribute('data-seat-idx');
+            if (!targetTableId || seatIdxAttr === null) return;
+            const targetSeatIdx = parseInt(seatIdxAttr);
+            const { tables: freshTables } = useStore.getState();
+            const table = freshTables.find(t => t.id === targetTableId);
+            if (!table) return;
+            const occupantId = table.seats[targetSeatIdx];
+            if (occupantId) swapSeats(guestId, targetTableId, targetSeatIdx);
+            else assignSeat(guestId, targetTableId, targetSeatIdx);
+            return;
+          }
+          cur = cur.parentElement;
+        }
+      }
+    };
+
+    const onDragEnd = () => {
+      setDropHover(null);
+    };
+
+    svg.addEventListener('dragover', onDragOver);
+    svg.addEventListener('drop', onDrop);
+    document.addEventListener('dragend', onDragEnd);
+
+    return () => {
+      svg.removeEventListener('dragover', onDragOver);
+      svg.removeEventListener('drop', onDrop);
+      document.removeEventListener('dragend', onDragEnd);
+    };
+  }, [assignSeat, swapSeats]);
 
   const getSVGPoint = (e: React.PointerEvent) => {
     if (!svgRef.current) return null;
@@ -116,36 +193,6 @@ export function Canvas() {
     } else {
       // Пустое место → создаём нового гостя
       openModal('guest', { targetTableId: tableId, targetSeatIdx: seatIdx });
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const guestId = e.dataTransfer.getData('text/plain');
-    if (!guestId) return;
-
-    const elements = document.elementsFromPoint(e.clientX, e.clientY);
-    for (const el of elements) {
-      let cur: Element | null = el;
-      while (cur) {
-        const cls = cur.getAttribute('class');
-        if (cls && cls.split(/\s+/).includes('canvas-seat')) {
-          const targetTableId = cur.getAttribute('data-table-id');
-          const seatIdxAttr = cur.getAttribute('data-seat-idx');
-          if (!targetTableId || seatIdxAttr === null) return;
-          const targetSeatIdx = parseInt(seatIdxAttr);
-
-          const { tables: freshTables } = useStore.getState();
-          const table = freshTables.find(t => t.id === targetTableId);
-          if (!table) return;
-
-          const occupantId = table.seats[targetSeatIdx];
-          if (occupantId) swapSeats(guestId, targetTableId, targetSeatIdx);
-          else assignSeat(guestId, targetTableId, targetSeatIdx);
-          return;
-        }
-        cur = cur.parentElement;
-      }
     }
   };
 
@@ -258,11 +305,7 @@ export function Canvas() {
   };
 
   return (
-    <div
-      className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-default'}`}
-      onDragOver={(e) => { e.preventDefault(); }}
-      onDrop={handleDrop}
-    >
+    <div className={`absolute inset-0 overflow-hidden ${isPanning ? 'cursor-grabbing' : ''}`}>
       <svg
         ref={svgRef}
         className="w-full h-full touch-none"
@@ -299,6 +342,7 @@ export function Canvas() {
               table={table}
               onEdit={() => openModal('table', { id: table.id })}
               selectedGuestId={selectedGuestId}
+              dropHover={dropHover}
               onSeatClick={handleSeatClick}
             />
           ))}
