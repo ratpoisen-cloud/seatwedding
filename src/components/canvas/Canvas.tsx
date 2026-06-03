@@ -55,6 +55,7 @@ export function Canvas() {
   const landmark = useStore(s => s.landmark);
   const updateLandmark = useStore(s => s.updateLandmark);
   const updateTable = useStore(s => s.updateTable);
+  const addTable = useStore(s => s.addTable);
   const assignSeat = useStore(s => s.assignSeat);
   const swapSeats = useStore(s => s.swapSeats);
   const openModal = useModalStore(s => s.openModal);
@@ -325,10 +326,16 @@ export function Canvas() {
         </g>
       </svg>
 
-      <div className="absolute bottom-6 right-6 flex flex-col gap-1.5 bg-secondary p-1.5 rounded-2xl shadow-[var(--shadow-card)] border border-accent/15 print-mode-hide">
-        <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl font-bold text-text-main hover:text-accent transition-colors">+</button>
-        <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl text-[10px] font-bold text-text-main hover:text-accent transition-colors">100%</button>
-        <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl font-bold text-text-main hover:text-accent transition-colors">-</button>
+      <div className="absolute bottom-6 right-6 flex flex-col gap-3 items-end">
+        <div className="flex gap-1.5 bg-secondary p-1.5 rounded-2xl shadow-[var(--shadow-card)] border border-accent/15 print-mode-hide">
+          <button onClick={() => addTable('round')} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl font-bold text-xs text-text-main hover:text-primary transition-colors" title="Добавить круглый стол">⬤</button>
+          <button onClick={() => addTable('rect')} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl font-bold text-xs text-text-main hover:text-primary transition-colors" title="Добавить прямоугольный стол">▬</button>
+        </div>
+        <div className="flex flex-col gap-1.5 bg-secondary p-1.5 rounded-2xl shadow-[var(--shadow-card)] border border-accent/15 print-mode-hide">
+          <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl font-bold text-text-main hover:text-accent transition-colors">+</button>
+          <button onClick={() => { setZoom(1); setPan({x:0, y:0}); }} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl text-[10px] font-bold text-text-main hover:text-accent transition-colors">100%</button>
+          <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="w-9 h-9 flex items-center justify-center bg-white hover:bg-accent/10 rounded-xl font-bold text-text-main hover:text-accent transition-colors">-</button>
+        </div>
       </div>
     </div>
   );
